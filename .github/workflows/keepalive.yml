@@ -1,0 +1,11 @@
+name: keep-alive
+# Pings the Render app so the free instance rarely spins down (cold start).
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every ~10 minutes (GitHub may delay under load)
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -s -m 40 -o /dev/null -w "pinged %{http_code}\n" https://svt-volleyball.onrender.com/api/state || true
