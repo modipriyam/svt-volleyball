@@ -1,0 +1,22 @@
+# Render Blueprint — deploy the scoring server as a free always-on web service.
+# In Render: New → Blueprint → connect this repo. Then set the secret env vars
+# (marked sync:false) in the dashboard.
+services:
+  - type: web
+    name: svt-volleyball
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/state
+    envVars:
+      - key: DISABLE_MDNS
+        value: "1"
+      - key: SHORT_ALIAS
+        value: svtliveboston
+      - key: TINYURL_TOKEN          # your TinyURL API token
+        sync: false
+      - key: UPSTASH_REDIS_REST_URL # from Upstash console
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

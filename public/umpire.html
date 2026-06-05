@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SVT — Umpire</title>
+<style>
+  @font-face { font-family:'Barlow Condensed'; font-weight:600; font-display:swap; src:url('/fonts/barlow-600.woff2') format('woff2'); }
+  @font-face { font-family:'Barlow Condensed'; font-weight:700; font-display:swap; src:url('/fonts/barlow-700.woff2') format('woff2'); }
+  @font-face { font-family:'Barlow Condensed'; font-weight:800; font-display:swap; src:url('/fonts/barlow-800.woff2') format('woff2'); }
+  :root {
+    --navy:#16386b; --navy-d:#0b1f3d; --orange:#f26a21; --orange-d:#d4520f;
+    --red:#db2b1d; --green:#2ea043; --gold:#f5b53d; --text:#eef3fb; --muted:#9fb2d0;
+    --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0 auto; font-family:system-ui,-apple-system,sans-serif; color:var(--text); padding:14px; max-width:820px; min-height:100vh;
+    background: radial-gradient(1100px 560px at 50% -12%, #1c4a8c 0%, var(--navy) 32%, var(--navy-d) 78%) fixed; }
+  .topbar { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; margin:-14px -14px 14px; padding:12px 14px;
+    background:var(--navy-d); border-bottom:1px solid rgba(255,255,255,.12); box-shadow:0 6px 18px rgba(0,0,0,.45); }
+  .topbar img { height:36px; }
+  .topbar h1 { font-family:var(--cond); font-weight:800; font-size:1.15rem; margin:0; color:#fff; text-transform:uppercase; letter-spacing:.02em; }
+  .topbar h1 .v { color:var(--orange); }
+  .topbar a { margin-left:auto; color:var(--gold); font-size:.78rem; text-decoration:none; font-weight:700; }
+
+  /* view switcher */
+  .views { display:flex; gap:8px; margin-bottom:14px; }
+  .views button { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:var(--muted);
+    padding:13px; border-radius:12px; font-family:var(--cond); font-weight:800; text-transform:uppercase; letter-spacing:.08em; font-size:1rem; cursor:pointer; }
+  .views button.active { background:linear-gradient(100deg,var(--navy),#1d4583); color:#fff; border-color:rgba(255,255,255,.25); }
+
+  h2 { font-family:var(--cond); font-size:1rem; text-transform:uppercase; letter-spacing:.12em; color:var(--gold); margin:16px 0 9px; font-weight:800; }
+  .panel { background:rgba(13,31,61,.92); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 14px 36px rgba(0,0,0,.32); }
+
+  /* "now scoring" header */
+  .scoringhead { display:flex; align-items:center; gap:12px; padding:12px 16px; margin-bottom:12px; border-radius:14px;
+    background:linear-gradient(100deg,rgba(242,106,33,.22),rgba(219,43,29,.12)); border:1px solid rgba(242,106,33,.5); }
+  .scoringhead .court { font-family:var(--cond); font-weight:800; color:var(--gold); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; }
+  .scoringhead .who { font-family:var(--cond); font-weight:800; color:#fff; font-size:1.25rem; text-transform:uppercase; line-height:1; }
+  .scoringhead .sw { margin-left:auto; flex:0 0 auto; }
+
+  .board { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; text-align:center; }
+  .board .team { font-family:var(--cond); font-size:1.5rem; font-weight:800; text-transform:uppercase; color:#fff; word-break:break-word; line-height:1.05; }
+  .board .cap { font-size:.8rem; color:var(--gold); font-weight:700; margin-top:2px; } .board .cap:empty{display:none;}
+  .board .pts { font-family:var(--cond); font-size:4rem; font-weight:800; line-height:1; background:linear-gradient(180deg,#fff 25%,#bcd2f0); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #bPtsB { background:linear-gradient(180deg,#ffd9bf 20%,var(--orange)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .board .mid { color:var(--muted); font-family:var(--cond); font-size:.82rem; letter-spacing:.1em; }
+  .board .sets { font-family:var(--cond); font-size:1rem; color:var(--gold); font-weight:700; }
+  .serving { display:inline-block; width:11px; height:11px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px var(--gold); margin-left:6px; vertical-align:middle; visibility:hidden; }
+  .serving.on { visibility:visible; }
+  .statusbar { display:flex; justify-content:space-between; gap:8px; margin-top:12px; font-size:.82rem; color:var(--muted); flex-wrap:wrap; align-items:center; }
+  .pill { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); padding:4px 12px; border-radius:999px; font-family:var(--cond); font-weight:800; letter-spacing:.08em; }
+  .pill.live { color:var(--green); } .pill.paused { color:var(--gold); }
+
+  button { font-family:var(--cond); cursor:pointer; border:none; border-radius:12px; color:#fff; font-weight:800; padding:13px; font-size:1.1rem; letter-spacing:.04em; text-transform:uppercase; }
+  button:active { transform:scale(.97); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; } .row>* { flex:1; }
+  .btn-plus { background:linear-gradient(180deg,#36b558,var(--green)); font-size:1.8rem; padding:16px 0; }
+  .btn-minus { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.16); font-size:1.8rem; padding:16px 0; }
+  .btn-accent { background:linear-gradient(100deg,var(--orange),var(--orange-d)); color:#fff; }
+  .btn-amber { background:linear-gradient(100deg,var(--gold),#e0992a); color:var(--navy-d); }
+  .btn-red { background:linear-gradient(100deg,var(--red),#ff5640); }
+  .btn-ghost { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:var(--text); }
+  .btn-sm { padding:9px 12px; font-size:.9rem; }
+  button.serve-on { background:linear-gradient(100deg,var(--green),#1f8a37); color:#fff; border-color:transparent; box-shadow:0 0 0 2px rgba(46,160,67,.4); }
+  button[disabled] { opacity:.4; pointer-events:none; }
+
+  .scorecol { text-align:center; }
+  .scorecol .editnum { font-family:var(--cond); font-size:2.8rem; font-weight:800; background:transparent; border:none; color:#fff; width:100%; text-align:center; padding:4px 0; }
+  .scorecol .editnum:focus { outline:2px solid var(--orange); border-radius:8px; }
+  .label { font-family:var(--cond); font-size:.85rem; color:var(--muted); margin-bottom:4px; text-transform:uppercase; letter-spacing:.08em; font-weight:700; }
+
+  input[type=text],input[type=number] { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); color:var(--text); border-radius:10px; padding:11px; font-size:1rem; width:100%; font-family:inherit; }
+  input::placeholder { color:#8aa0c4; }
+  .addgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; } @media (max-width:480px){ .addgrid{grid-template-columns:1fr;} }
+
+  .fixture { display:flex; align-items:center; gap:8px; padding:11px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:12px; margin-bottom:8px; }
+  .fixture.live { border-color:rgba(242,106,33,.6); background:linear-gradient(100deg,rgba(242,106,33,.22),rgba(219,43,29,.14)); }
+  .fixture .names { flex:1; font-family:var(--cond); font-weight:700; font-size:1.12rem; text-transform:uppercase; }
+  .fixture .meta { font-size:.75rem; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+  .fixture .acts { display:flex; gap:6px; }
+
+  .phist { margin-top:14px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:4px 12px; }
+  .phist summary { cursor:pointer; list-style:none; font-family:var(--cond); font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:var(--gold); padding:12px 0; display:flex; align-items:center; gap:8px; }
+  .phist summary::-webkit-details-marker { display:none; } .phist summary::after { content:'▾'; margin-left:auto; color:var(--muted); }
+  .phist[open] summary::after { transform:rotate(180deg); }
+  .phist-list { max-height:300px; overflow-y:auto; padding:4px 0 10px; }
+  .phist-row { display:flex; align-items:center; gap:10px; padding:8px; border-radius:8px; font-size:.92rem; }
+  .phist-row:nth-child(odd){ background:rgba(255,255,255,.04); }
+  .phist-row .pn { color:var(--muted); width:38px; flex:0 0 auto; } .phist-row .pt { flex:1; font-weight:700; font-family:var(--cond); text-transform:uppercase; }
+  .phist-row .pt.a{color:#bcd2f0;} .phist-row .pt.b{color:#ffd9bf;} .phist-row .ps{color:var(--muted);font-size:.82rem;} .phist-row .pscore{font-family:var(--cond);font-weight:800;min-width:46px;text-align:right;}
+
+  /* modal */
+  .scrim { position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:.2s; }
+  .scrim.open { opacity:1; pointer-events:auto; }
+  .modal { position:fixed; z-index:95; left:50%; top:50%; transform:translate(-50%,-46%) scale(.96); opacity:0; pointer-events:none;
+    width:min(420px,92vw); background:linear-gradient(180deg,#16386b,#0a2342); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:22px; box-shadow:0 26px 70px rgba(0,0,0,.6); transition:.22s; }
+  .modal.open { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
+  .modal h3 { font-family:var(--cond); font-weight:800; text-transform:uppercase; color:#fff; margin:0 0 14px; font-size:1.45rem; }
+  .modal .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal label { display:block; font-family:var(--cond); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); font-size:.76rem; margin:12px 0 4px; }
+  .modal .opts { display:flex; flex-direction:column; gap:10px; }
+  .modal .opts button { width:100%; }
+  .modal-actions { display:flex; gap:10px; margin-top:18px; } .modal-actions button { flex:1; }
+
+  .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(11,31,61,.95); border:1px solid rgba(255,255,255,.15); color:#fff; padding:11px 18px; border-radius:12px; font-size:.92rem; opacity:0; transition:opacity .25s; pointer-events:none; z-index:120; }
+  .toast.show { opacity:1; }
+  .muted { color:var(--muted); font-size:.9rem; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <img id="logo" src="/BostonMainLogoFullWhite.png" alt="" onerror="this.style.display='none'" />
+    <h1>SVT <span class="v">·</span> Umpire</h1>
+    <a href="/admin">Admin ↗</a>
+  </div>
+
+  <div class="views">
+    <button id="vScoring" class="active" data-view="scoring">🏐 Scoring</button>
+    <button id="vSchedule" data-view="schedule">📋 Schedule</button>
+  </div>
+
+  <!-- ===================== SCORING VIEW ===================== -->
+  <div id="view-scoring">
+    <div class="scoringhead hidden" id="scoringHead">
+      <div>
+        <div class="court" id="shCourt">Court 1</div>
+        <div class="who" id="shWho">—</div>
+      </div>
+      <button class="btn-ghost btn-sm sw" id="btnSwitch">⇄ Switch</button>
+    </div>
+
+    <div id="liveArea">
+      <div class="panel">
+        <div class="board">
+          <div>
+            <div class="team" id="bTeamA">—</div><div class="cap" id="bCapA"></div>
+            <div class="pts" id="bPtsA">0</div><div class="sets">Sets: <span id="bSetsA">0</span></div>
+          </div>
+          <div class="mid"><div>SET</div><div style="font-size:1.6rem;font-weight:800;color:var(--text)" id="bSet">1</div><div style="font-size:1.4rem">vs</div></div>
+          <div>
+            <div class="team" id="bTeamB">—</div><div class="cap" id="bCapB"></div>
+            <div class="pts" id="bPtsB">0</div><div class="sets">Sets: <span id="bSetsB">0</span></div>
+          </div>
+        </div>
+        <div class="statusbar">
+          <span id="serveStatus">Serving: <b id="servingTeam">—</b><span class="serving" id="servingDot"></span></span>
+          <span class="pill" id="statusPill">—</span><span>⏱ <b id="elapsed">00:00</b></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-top:0">Game Control</h2>
+        <div class="row">
+          <button class="btn-amber" id="btnPause">Pause</button>
+          <button class="btn-accent" id="btnNextSet">Next Set ▸</button>
+          <button class="btn-ghost" id="btnUndo">↶ Undo</button>
+          <button class="btn-red" id="btnEnd">End Game</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-top:0">Scoring (tap a number to type exact value)</h2>
+        <div class="board" style="align-items:stretch">
+          <div class="scorecol"><div class="label" id="sTeamA">Team A</div><input class="editnum" id="inPtsA" type="number" inputmode="numeric" value="0" />
+            <div class="row"><button class="btn-plus" data-score="A" data-d="1">+1</button><button class="btn-minus" data-score="A" data-d="-1">−1</button></div></div>
+          <div class="mid" style="align-self:center;color:var(--muted)">PTS</div>
+          <div class="scorecol"><div class="label" id="sTeamB">Team B</div><input class="editnum" id="inPtsB" type="number" inputmode="numeric" value="0" />
+            <div class="row"><button class="btn-plus" data-score="B" data-d="1">+1</button><button class="btn-minus" data-score="B" data-d="-1">−1</button></div></div>
+        </div>
+        <h2>Serve · Sets · Set #</h2>
+        <div class="row"><button class="btn-ghost" data-serve="A">Serve ◀ A</button><button class="btn-ghost" data-serve="B">Serve B ▶</button></div>
+        <div class="row" style="margin-top:8px">
+          <div class="scorecol"><div class="label">Sets A</div><input class="editnum" id="inSetsA" type="number" inputmode="numeric" value="0" style="font-size:1.6rem" />
+            <div class="row"><button class="btn-sm btn-plus" data-sets="A" data-d="1" style="font-size:1rem;padding:8px">+</button><button class="btn-sm btn-minus" data-sets="A" data-d="-1" style="font-size:1rem;padding:8px">−</button></div></div>
+          <div class="scorecol"><div class="label">Set #</div><input class="editnum" id="inSet" type="number" inputmode="numeric" value="1" style="font-size:1.6rem" />
+            <div class="row"><button class="btn-sm btn-plus" data-setnum="1" style="font-size:1rem;padding:8px">+</button><button class="btn-sm btn-minus" data-setnum="-1" style="font-size:1rem;padding:8px">−</button></div></div>
+          <div class="scorecol"><div class="label">Sets B</div><input class="editnum" id="inSetsB" type="number" inputmode="numeric" value="0" style="font-size:1.6rem" />
+            <div class="row"><button class="btn-sm btn-plus" data-sets="B" data-d="1" style="font-size:1rem;padding:8px">+</button><button class="btn-sm btn-minus" data-sets="B" data-d="-1" style="font-size:1rem;padding:8px">−</button></div></div>
+        </div>
+        <h2>Set History</h2><div id="setHistory" class="muted">No sets completed yet.</div>
+        <h2>Reset</h2>
+        <div class="row"><button class="btn-ghost" id="btnResetSet">Reset Set (points→0)</button><button class="btn-red" id="btnResetMatch">Reset Match</button></div>
+        <details class="phist" id="phist"><summary>📜 Point History <span id="phistCount" style="color:var(--muted)"></span></summary><div class="phist-list" id="pointHistory"></div></details>
+      </div>
+    </div>
+
+    <div class="panel hidden" id="noGame">
+      <p class="muted" style="margin:0;text-align:center">No game selected. Go to <b>📋 Schedule</b> to start a game (up to 2 courts) or pick a live one to score.</p>
+    </div>
+  </div>
+
+  <!-- ===================== SCHEDULE VIEW ===================== -->
+  <div id="view-schedule" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Add Match</h2>
+      <div class="addgrid">
+        <input type="text" id="newA" placeholder="Team A" />
+        <input type="text" id="newCapA" placeholder="Captain A (optional)" />
+        <input type="text" id="newB" placeholder="Team B" />
+        <input type="text" id="newCapB" placeholder="Captain B (optional)" />
+      </div>
+      <button class="btn-accent" id="btnAddFixture" style="width:100%;margin-top:10px">+ Add Match</button>
+      <h2>Schedule</h2>
+      <div id="fixtures"></div>
+    </div>
+  </div>
+
+  <!-- court chooser modal -->
+  <div class="scrim" id="courtScrim"></div>
+  <div class="modal" id="courtModal">
+    <h3>Start Game</h3>
+    <p class="muted" id="courtWho" style="margin:-6px 0 14px"></p>
+    <label style="display:block;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);font-size:.76rem;margin-bottom:6px">Number of sets (best of)</label>
+    <div style="display:flex;align-items:center;gap:16px;justify-content:center;margin-bottom:16px">
+      <button class="btn-ghost" id="setsMinus" style="width:56px;font-size:1.7rem;padding:6px 0">−</button>
+      <span id="setsVal" style="font-family:var(--cond);font-weight:800;font-size:2.6rem;min-width:50px;text-align:center;color:#fff">3</span>
+      <button class="btn-ghost" id="setsPlus" style="width:56px;font-size:1.7rem;padding:6px 0">+</button>
+    </div>
+    <label style="display:block;font-family:var(--cond);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);font-size:.76rem;margin-bottom:6px">Court</label>
+    <div class="opts" id="courtOpts"></div>
+    <div class="modal-actions"><button class="btn-ghost" id="courtCancel">Cancel</button><button class="btn-accent" id="btnStartGame">Start Game ▶</button></div>
+  </div>
+
+  <!-- switch-game modal -->
+  <div class="scrim" id="switchScrim"></div>
+  <div class="modal" id="switchModal">
+    <h3>Switch game to score</h3>
+    <div class="opts" id="switchOpts"></div>
+    <div class="modal-actions"><button class="btn-ghost" id="switchCancel">Cancel</button></div>
+  </div>
+
+  <!-- edit modal -->
+  <div class="scrim" id="editScrim"></div>
+  <div class="modal" id="editModal">
+    <h3>Edit Match</h3>
+    <div class="row2">
+      <div><label>Team A</label><input type="text" id="edA" /></div><div><label>Captain A</label><input type="text" id="edCapA" placeholder="optional" /></div>
+      <div><label>Team B</label><input type="text" id="edB" /></div><div><label>Captain B</label><input type="text" id="edCapB" placeholder="optional" /></div>
+    </div>
+    <div class="modal-actions"><button class="btn-ghost" data-edaction="cancel">Cancel</button><button class="btn-accent" data-edaction="save">Save</button></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let editing=false, lastState=null, lastPhistSig='', selectedGame=sessionStorage.getItem('umpGame')||'', view='scoring';
+
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1700); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtTime(ms){ const s=Math.floor(ms/1000); return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+
+async function api(path, body){
+  const res = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(Object.assign({ game: selectedGame }, body||{})) });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok){ toast(data.error||'Error'); throw new Error(data.error||'error'); }
+  render(data); return data;
+}
+function curGame(s){ return (s.games||[]).find(g=>g.fixtureId===selectedGame) || null; }
+
+function setView(v){ view=v; $('view-scoring').classList.toggle('hidden', v!=='scoring'); $('view-schedule').classList.toggle('hidden', v!=='schedule');
+  $('vScoring').classList.toggle('active', v==='scoring'); $('vSchedule').classList.toggle('active', v==='schedule'); }
+
+function render(s){
+  lastState=s;
+  const g = curGame(s);
+  $('scoringHead').classList.toggle('hidden', !g);
+  $('liveArea').classList.toggle('hidden', !g);
+  $('noGame').classList.toggle('hidden', !!g);
+
+  if (g){
+    const live=g.live;
+    $('shCourt').textContent = 'Court '+g.slot;
+    $('shWho').textContent = g.teamA+' v '+g.teamB;
+    $('bTeamA').textContent=g.teamA; $('bTeamB').textContent=g.teamB;
+    $('bCapA').textContent=g.captainA?'👤 '+g.captainA:''; $('bCapB').textContent=g.captainB?'👤 '+g.captainB:'';
+    $('bPtsA').textContent=live.pointsA; $('bPtsB').textContent=live.pointsB;
+    $('bSetsA').textContent=live.setsA; $('bSetsB').textContent=live.setsB;
+    $('bSet').textContent=live.currentSet + ' / ' + (live.totalSets||3);
+    $('servingTeam').textContent=live.serving==='A'?g.teamA:g.teamB;
+    $('servingDot').className='serving'+(s.showServe?' on':''); $('serveStatus').style.display=s.showServe?'':'none';
+    const sp=$('statusPill'); if(live.paused){sp.textContent='Paused';sp.className='pill paused';}else{sp.textContent='LIVE';sp.className='pill live';}
+    $('btnPause').textContent=live.paused?'Resume':'Pause';
+    document.querySelectorAll('[data-serve]').forEach(b=>b.classList.toggle('serve-on', s.showServe && live.serving===b.dataset.serve));
+    $('sTeamA').textContent=g.teamA; $('sTeamB').textContent=g.teamB;
+    if(!editing){ $('inPtsA').value=live.pointsA; $('inPtsB').value=live.pointsB; $('inSetsA').value=live.setsA; $('inSetsB').value=live.setsB; $('inSet').value=live.currentSet; }
+    const sh=$('setHistory'); sh.innerHTML=(live.setHistory&&live.setHistory.length)?live.setHistory.map((x,i)=>`<span class="pill" style="margin:0 6px 6px 0;display:inline-block">Set ${i+1}: ${x[0]}–${x[1]}</span>`).join(''):'No sets completed yet.';
+    const log=live.pointLog||[]; $('phistCount').textContent='('+log.length+')';
+    const psig=g.fixtureId+':'+log.length+':'+(log.length?log[log.length-1].a+'-'+log[log.length-1].b:'');
+    if(psig!==lastPhistSig){ lastPhistSig=psig;
+      if(!log.length) $('pointHistory').innerHTML='<div class="phist-row"><span class="ps">No points yet.</span></div>';
+      else { let h=''; for(let i=log.length-1;i>=0;i--){ const e=log[i]; const nm=e.team==='A'?g.teamA:g.teamB; h+=`<div class="phist-row"><span class="pn">#${i+1}</span><span class="pt ${e.team.toLowerCase()}">${escapeHtml(nm)}</span><span class="ps">Set ${e.set}</span><span class="pscore">${e.a}–${e.b}</span></div>`; } $('pointHistory').innerHTML=h; }
+    }
+  }
+  renderFixtures(s);
+}
+
+function renderFixtures(s){
+  const wrap=$('fixtures');
+  if(!s.fixtures.length){ wrap.innerHTML='<p class="muted">No fixtures yet. Add one above.</p>'; return; }
+  const full = (s.games||[]).length>=2;
+  wrap.innerHTML='';
+  s.fixtures.forEach(f=>{
+    const liveG = (s.games||[]).find(g=>g.fixtureId===f.id);
+    const div=document.createElement('div'); div.className='fixture'+(liveG?' live':'');
+    let meta;
+    if(liveG) meta=`<div class="meta">● Live on Court ${liveG.slot}</div>`;
+    else if(f.status==='done'&&f.result){ const w=f.result.winner?(f.result.winner==='A'?f.teamA:f.teamB):'Draw'; meta=`<div class="meta">Done · ${f.result.setsA}–${f.result.setsB} · 🏆 ${escapeHtml(w)}</div>`; }
+    else meta=`<div class="meta">${f.status}</div>`;
+    const capA=f.captainA?` <span class="meta">(${escapeHtml(f.captainA)})</span>`:''; const capB=f.captainB?` <span class="meta">(${escapeHtml(f.captainB)})</span>`:'';
+    let act;
+    if(liveG) act=`<button class="btn-sm btn-accent" data-score-this="${f.id}">Score this</button>`;
+    else act=`<button class="btn-sm" style="background:var(--green)" data-start="${f.id}" ${full?'disabled':''}>▶ Start</button>`;
+    div.innerHTML=`<div class="names">${escapeHtml(f.teamA)}${capA} <span style="color:var(--muted)">vs</span> ${escapeHtml(f.teamB)}${capB}${meta}</div>
+      <div class="acts">${act}<button class="btn-sm btn-ghost" data-edit="${f.id}">✎</button><button class="btn-sm btn-red" data-del="${f.id}">🗑</button></div>`;
+    wrap.appendChild(div);
+  });
+}
+
+// ----- court + sets chooser on start (select court, then Start Game) -----
+let startFixtureId=null, chosenSets=3, chosenCourt=1;
+function buildCourtOpts(){
+  const used = new Set((lastState.games||[]).map(g=>g.slot));
+  $('courtOpts').innerHTML = [1,2].map(n=>{
+    const inUse = used.has(n);
+    const cls = inUse ? 'btn-ghost' : (n===chosenCourt ? 'btn-accent' : 'btn-ghost');
+    return `<button class="${cls}" data-court="${n}" ${inUse?'disabled':''}>Court ${n}${inUse?' (in use)':(n===chosenCourt?' ✓':'')}</button>`;
+  }).join('');
+}
+function openCourtChooser(fid){
+  const f=lastState.fixtures.find(x=>x.id===fid); if(!f) return;
+  startFixtureId=fid; chosenSets=3; $('setsVal').textContent=chosenSets;
+  const used = new Set((lastState.games||[]).map(g=>g.slot));
+  chosenCourt = [1,2].find(n=>!used.has(n)) || 1;
+  $('courtWho').textContent = f.teamA+' vs '+f.teamB;
+  buildCourtOpts();
+  $('courtModal').classList.add('open'); $('courtScrim').classList.add('open');
+}
+function closeCourt(){ $('courtModal').classList.remove('open'); $('courtScrim').classList.remove('open'); startFixtureId=null; }
+function selectCourt(n){ chosenCourt=n; buildCourtOpts(); }
+$('courtScrim').onclick=closeCourt; $('courtCancel').onclick=closeCourt;
+
+$('setsMinus').onclick = ()=>{ chosenSets=Math.max(1,chosenSets-1); $('setsVal').textContent=chosenSets; };
+$('setsPlus').onclick = ()=>{ chosenSets=Math.min(15,chosenSets+1); $('setsVal').textContent=chosenSets; };
+$('btnStartGame').onclick = ()=>{ if(!chosenCourt){ toast('Pick a court'); return; } startOnCourt(chosenCourt); };
+
+function startOnCourt(slot){
+  const fid=startFixtureId; if(!fid) return;
+  fetch('/api/fixtures/'+fid+'/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slot,sets:chosenSets})})
+    .then(r=>r.json()).then(d=>{ if(d.error){toast(d.error);return;} selectedGame=fid; sessionStorage.setItem('umpGame',fid); closeCourt(); setView('scoring'); render(d); toast('Started on Court '+slot+' · best of '+chosenSets); });
+}
+
+// ----- switch game -----
+function openSwitch(){
+  const games=lastState.games||[];
+  if(!games.length){ toast('No live games'); return; }
+  $('switchOpts').innerHTML = games.map(g=>`<button class="${g.fixtureId===selectedGame?'btn-accent':'btn-ghost'}" data-switch="${g.fixtureId}">Court ${g.slot}: ${escapeHtml(g.teamA)} v ${escapeHtml(g.teamB)}</button>`).join('');
+  $('switchModal').classList.add('open'); $('switchScrim').classList.add('open');
+}
+function closeSwitch(){ $('switchModal').classList.remove('open'); $('switchScrim').classList.remove('open'); }
+$('switchScrim').onclick=closeSwitch; $('switchCancel').onclick=closeSwitch;
+$('btnSwitch').onclick=openSwitch;
+
+// ----- delegated clicks -----
+document.body.addEventListener('click', (e)=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if (t.dataset.view) setView(t.dataset.view);
+  else if (t.dataset.score) api('/api/score',{team:t.dataset.score,delta:+t.dataset.d});
+  else if (t.dataset.sets) api('/api/sets',{team:t.dataset.sets,delta:+t.dataset.d});
+  else if (t.dataset.serve) api('/api/serve',{team:t.dataset.serve});
+  else if (t.dataset.setnum) api('/api/set-number',{delta:+t.dataset.setnum});
+  else if (t.dataset.start) openCourtChooser(t.dataset.start);
+  else if (t.dataset.court) selectCourt(+t.dataset.court);
+  else if (t.dataset.switch){ selectedGame=t.dataset.switch; sessionStorage.setItem('umpGame',selectedGame); closeSwitch(); if(lastState) render(lastState); }
+  else if (t.dataset.scoreThis){ selectedGame=t.dataset.scoreThis; sessionStorage.setItem('umpGame',selectedGame); setView('scoring'); if(lastState) render(lastState); }
+  else if (t.dataset.del){ if(confirm('Delete this fixture?')) fetch('/api/fixtures/'+t.dataset.del,{method:'DELETE'}).then(r=>r.json()).then(render); }
+  else if (t.dataset.edit) startEdit(t.dataset.edit);
+  else if (t.dataset.edaction==='save') saveEdit();
+  else if (t.dataset.edaction==='cancel') closeEdit();
+});
+
+$('btnPause').onclick=()=>{ const g=curGame(lastState); api('/api/game/pause',{paused:!(g&&g.live.paused)}); };
+$('btnNextSet').onclick=()=>{ if(confirm('End current set and start the next?')) api('/api/game/next-set'); };
+$('btnEnd').onclick=()=>{ if(confirm('End this game and record the result?')) api('/api/game/end').then(()=>{ selectedGame=''; sessionStorage.removeItem('umpGame'); }); };
+$('btnUndo').onclick=()=>fetch('/api/undo',{method:'POST'}).then(r=>r.json()).then(d=>{ if(d.error)toast(d.error); else {render(d);toast('Undone');} });
+$('btnResetSet').onclick=()=>{ if(confirm('Reset current-set points to 0?')) api('/api/reset',{type:'set'}); };
+$('btnResetMatch').onclick=()=>{ if(confirm('Reset ALL scoring for this game?')) api('/api/reset',{type:'match'}); };
+
+$('btnAddFixture').onclick=()=>{ const a=$('newA').value.trim(), b=$('newB').value.trim(); if(!a||!b){toast('Enter both team names');return;}
+  fetch('/api/fixtures',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamA:a,teamB:b,captainA:$('newCapA').value.trim(),captainB:$('newCapB').value.trim()})}).then(r=>r.json()).then(d=>{ render(d); ['newA','newB','newCapA','newCapB'].forEach(i=>$(i).value=''); }); };
+
+let editId=null;
+function startEdit(id){ const f=lastState.fixtures.find(x=>x.id===id); if(!f)return; editId=id; $('edA').value=f.teamA||''; $('edCapA').value=f.captainA||''; $('edB').value=f.teamB||''; $('edCapB').value=f.captainB||''; $('editModal').classList.add('open'); $('editScrim').classList.add('open'); }
+function closeEdit(){ $('editModal').classList.remove('open'); $('editScrim').classList.remove('open'); editId=null; }
+$('editScrim').onclick=closeEdit;
+function saveEdit(){ if(!editId){closeEdit();return;} const a=$('edA').value.trim(), b=$('edB').value.trim(); if(!a||!b){toast('Team names required');return;}
+  fetch('/api/fixtures/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamA:a,teamB:b,captainA:$('edCapA').value.trim(),captainB:$('edCapB').value.trim()})}).then(r=>r.json()).then(d=>{ closeEdit(); try{render(d);}catch(e){} toast('Match updated'); }); }
+
+function wireEdit(id, endpoint, extra){ const el=$(id);
+  el.addEventListener('focus',()=>{editing=true;el.select();});
+  const commit=()=>{ editing=false; const v=parseInt(el.value,10); if(Number.isFinite(v)) api(endpoint, Object.assign({value:v}, extra||{})); };
+  el.addEventListener('blur',commit); el.addEventListener('keydown',e=>{ if(e.key==='Enter') el.blur(); }); }
+wireEdit('inPtsA','/api/score',{team:'A'}); wireEdit('inPtsB','/api/score',{team:'B'});
+wireEdit('inSetsA','/api/sets',{team:'A'}); wireEdit('inSetsB','/api/sets',{team:'B'}); wireEdit('inSet','/api/set-number',{});
+
+setInterval(()=>{ const g=lastState&&curGame(lastState); if(!g){ $('elapsed').textContent='00:00'; return; } if(!g.live.paused) g.live.elapsedMs+=1000; $('elapsed').textContent=fmtTime(g.live.elapsedMs); }, 1000);
+
+async function poll(){ try{ const r=await fetch('/api/state'); render(await r.json()); }catch(e){} }
+poll(); setInterval(poll, 1500);
+</script>
+</body>
+</html>

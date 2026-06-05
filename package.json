@@ -1,0 +1,19 @@
+{
+  "name": "suhradam-volleyball-scoring",
+  "version": "1.0.0",
+  "description": "Local volleyball tournament scoring system: admin/umpire panel, OBS overlay, and fan live page over local WiFi.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "setup": "npm install"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bonjour-service": "^1.2.1",
+    "express": "^4.19.2",
+    "qrcode": "^1.5.4",
+    "web-push": "^3.6.7"
+  }
+}

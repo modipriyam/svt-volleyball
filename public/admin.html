@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>SVT — Admin</title>
+<style>
+  @font-face { font-family:'Barlow Condensed'; font-weight:600; font-display:swap; src:url('/fonts/barlow-600.woff2') format('woff2'); }
+  @font-face { font-family:'Barlow Condensed'; font-weight:700; font-display:swap; src:url('/fonts/barlow-700.woff2') format('woff2'); }
+  @font-face { font-family:'Barlow Condensed'; font-weight:800; font-display:swap; src:url('/fonts/barlow-800.woff2') format('woff2'); }
+  :root {
+    --navy:#16386b; --navy-d:#0b1f3d; --orange:#f26a21; --orange-d:#d4520f;
+    --red:#db2b1d; --green:#2ea043; --gold:#f5b53d; --text:#eef3fb; --muted:#9fb2d0;
+    --cond:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0 auto; font-family:system-ui,-apple-system,sans-serif; color:var(--text); padding:14px; max-width:820px; min-height:100vh;
+    background: radial-gradient(1100px 560px at 50% -12%, #1c4a8c 0%, var(--navy) 32%, var(--navy-d) 78%) fixed; }
+  .topbar { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:12px; margin:-14px -14px 14px; padding:12px 14px;
+    background:var(--navy-d); border-bottom:1px solid rgba(255,255,255,.12); box-shadow:0 6px 18px rgba(0,0,0,.45); }
+  .topbar img { height:36px; }
+  .topbar h1 { font-family:var(--cond); font-weight:800; font-size:1.15rem; margin:0; color:#fff; text-transform:uppercase; letter-spacing:.02em; }
+  .topbar h1 .v { color:var(--orange); }
+  .topbar a { margin-left:auto; color:var(--gold); font-size:.78rem; text-decoration:none; font-weight:700; }
+
+  .views { display:flex; gap:8px; margin-bottom:14px; }
+  .views button { flex:1; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); color:var(--muted);
+    padding:13px; border-radius:12px; font-family:var(--cond); font-weight:800; text-transform:uppercase; letter-spacing:.06em; font-size:.95rem; cursor:pointer; }
+  .views button.active { background:linear-gradient(100deg,var(--orange),var(--orange-d)); color:#fff; border-color:transparent; box-shadow:0 6px 16px rgba(242,106,33,.4); }
+
+  h2 { font-family:var(--cond); font-size:1rem; text-transform:uppercase; letter-spacing:.12em; color:var(--gold); margin:16px 0 9px; font-weight:800; }
+  .panel { background:rgba(13,31,61,.92); border:1px solid rgba(255,255,255,.1); border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 14px 36px rgba(0,0,0,.32); }
+  .muted { color:var(--muted); font-size:.88rem; }
+
+  button { font-family:var(--cond); cursor:pointer; border:none; border-radius:12px; color:#fff; font-weight:800; padding:12px; font-size:1rem; letter-spacing:.04em; text-transform:uppercase; }
+  button:active { transform:scale(.97); }
+  .btn-accent { background:linear-gradient(100deg,var(--orange),var(--orange-d)); color:#fff; }
+  .btn-amber { background:linear-gradient(100deg,var(--gold),#e0992a); color:var(--navy-d); }
+  .btn-red { background:linear-gradient(100deg,var(--red),#ff5640); }
+  .btn-ghost { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); color:var(--text); }
+  .btn-sm { padding:9px 12px; font-size:.85rem; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; } .row>*{ flex:1; }
+
+  input[type=text],input[type=number],select { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); color:var(--text); border-radius:10px; padding:11px; font-size:1rem; width:100%; font-family:inherit; min-width:0; }
+  input::placeholder { color:#8aa0c4; } select option { background:#0a2342; color:#fff; }
+  .inline { display:flex; gap:8px; align-items:center; } .inline>input,.inline>select{ flex:1; } .inline>button{ flex:0 0 auto; }
+  .addgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; } @media(max-width:480px){ .addgrid{grid-template-columns:1fr;} }
+
+  /* toggle switch */
+  .switch { display:flex; align-items:center; gap:12px; cursor:pointer; font-family:var(--cond); font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:1rem; color:var(--text); }
+  .switch input { position:absolute; opacity:0; pointer-events:none; }
+  .switch .slider { position:relative; width:52px; height:30px; flex:0 0 auto; border-radius:999px; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.22); transition:.25s; }
+  .switch .slider::before { content:''; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.45); transition:.25s; }
+  .switch input:checked + .slider { background:linear-gradient(100deg,var(--green),#1f8a37); border-color:transparent; }
+  .switch input:checked + .slider::before { transform:translateX(22px); } .switch b{ color:#fff; }
+
+  /* live overview */
+  .ov { display:flex; align-items:center; gap:12px; padding:12px 14px; border-radius:12px; margin-bottom:8px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); }
+  .ov .court { font-family:var(--cond); font-weight:800; color:var(--gold); font-size:.72rem; letter-spacing:.12em; }
+  .ov .nm { font-family:var(--cond); font-weight:700; color:#fff; font-size:1.1rem; text-transform:uppercase; }
+  .ov .sc { margin-left:auto; font-family:var(--cond); font-weight:800; font-size:1.6rem; color:#fff; }
+  .ov .st { color:var(--muted); font-size:.72rem; }
+
+  /* fixtures */
+  .fixture { display:flex; align-items:center; gap:8px; padding:11px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:12px; margin-bottom:8px; }
+  .fixture.live { border-color:rgba(242,106,33,.6); background:linear-gradient(100deg,rgba(242,106,33,.22),rgba(219,43,29,.14)); }
+  .fixture .names { flex:1; font-family:var(--cond); font-weight:700; font-size:1.12rem; text-transform:uppercase; }
+  .fixture .meta { font-size:.75rem; color:var(--muted); font-weight:400; text-transform:none; letter-spacing:0; }
+  .fixture .acts { display:flex; gap:6px; }
+
+  .qrwrap { text-align:center; } .qrwrap img { width:180px; height:180px; background:#fff; border-radius:14px; padding:8px; box-shadow:0 10px 26px rgba(0,0,0,.35); }
+  .qrwrap .u { font-size:.8rem; color:var(--muted); margin-top:8px; word-break:break-all; }
+
+  .scrim { position:fixed; inset:0; z-index:90; background:rgba(0,0,0,.6); opacity:0; pointer-events:none; transition:.2s; } .scrim.open{opacity:1;pointer-events:auto;}
+  .modal { position:fixed; z-index:95; left:50%; top:50%; transform:translate(-50%,-46%) scale(.96); opacity:0; pointer-events:none; width:min(420px,92vw); background:linear-gradient(180deg,#16386b,#0a2342); border:1px solid rgba(255,255,255,.16); border-radius:18px; padding:22px; box-shadow:0 26px 70px rgba(0,0,0,.6); transition:.22s; }
+  .modal.open { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
+  .modal h3 { font-family:var(--cond); font-weight:800; text-transform:uppercase; color:#fff; margin:0 0 8px; font-size:1.45rem; }
+  .modal .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .modal label { display:block; font-family:var(--cond); font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--gold); font-size:.76rem; margin:12px 0 4px; }
+  .modal-actions { display:flex; gap:10px; margin-top:20px; } .modal-actions button{ flex:1; }
+
+  .toast { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); background:rgba(11,31,61,.95); border:1px solid rgba(255,255,255,.15); color:#fff; padding:11px 18px; border-radius:12px; font-size:.92rem; opacity:0; transition:opacity .25s; pointer-events:none; z-index:120; } .toast.show{opacity:1;}
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <img id="logo" src="/BostonMainLogoFullWhite.png" alt="" onerror="this.style.display='none'" />
+    <h1>SVT <span class="v">·</span> Admin</h1>
+    <a href="/umpire">Umpire ↗</a>
+  </div>
+
+  <div class="views">
+    <button class="active" data-view="settings">⚙️ Settings</button>
+    <button data-view="fixtures">📋 Fixtures</button>
+  </div>
+
+  <!-- ===== SETTINGS VIEW ===== -->
+  <div id="view-settings">
+    <!-- live overview -->
+    <div class="panel">
+      <h2 style="margin-top:0">Live Games</h2>
+      <div id="overview"><p class="muted" style="margin:0">No games are live right now.</p></div>
+    </div>
+
+    <!-- champion -->
+    <div class="panel">
+      <h2 style="margin-top:0">🏆 Tournament Champion</h2>
+      <div class="inline"><select id="champSelect"></select><button class="btn-amber btn-sm" id="btnCrown">Crown</button><button class="btn-ghost btn-sm" id="btnClearChamp">Clear</button></div>
+      <p class="muted" id="champNow" style="margin:8px 0 12px;font-size:.8rem"></p>
+      <h2 style="margin-top:0">🥈 Runner-up</h2>
+      <div class="inline"><select id="runnerSelect"></select><button class="btn-accent btn-sm" id="btnRunner">Set</button><button class="btn-ghost btn-sm" id="btnClearRunner">Clear</button></div>
+      <p class="muted" id="runnerNow" style="margin:8px 0 0;font-size:.8rem"></p>
+    </div>
+
+    <!-- announcement + stream -->
+    <div class="panel">
+      <h2 style="margin-top:0">Fan Announcement</h2>
+      <div class="inline"><input type="text" id="inAnnounce" placeholder="e.g. Finals at 4pm" /><button class="btn-accent btn-sm" id="btnAnnounce">Push</button><button class="btn-ghost btn-sm" id="btnAnnounceClear">Clear</button></div>
+      <h2>YouTube Stream Link (optional)</h2>
+      <div class="inline"><input type="text" id="inYoutube" placeholder="https://youtube.com/watch?v=..." /><button class="btn-accent btn-sm" id="btnYoutube">Save</button></div>
+      <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkWatch" /><span class="slider"></span>Show <b>“Watch Live”</b> on fan page</label>
+      <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkServe" /><span class="slider"></span>Enable serve tracking</label>
+    </div>
+
+    <!-- public link -->
+    <div class="panel qrwrap" id="publicPanel" style="display:none">
+      <h2 style="margin-top:0">🌐 Public Link — share with everyone</h2>
+      <img id="publicQr" alt="Public link QR code" /><div class="u" id="publicUrl"></div>
+      <div id="shortWrap" style="display:none;margin-top:10px">
+        <div style="font-family:var(--cond);font-weight:800;color:var(--gold);letter-spacing:.08em;text-transform:uppercase;font-size:.78rem">Short link</div>
+        <div class="u" id="shortUrl" style="font-size:1rem;color:#fff;margin-top:2px"></div>
+        <button class="btn-amber btn-sm" id="btnCopyShort" style="margin-top:8px">Copy short link</button>
+      </div>
+      <button class="btn-accent btn-sm" id="btnCopyPublic" style="margin-top:10px">Copy fan link</button>
+    </div>
+    <div class="panel" id="publicHint">
+      <h2 style="margin-top:0">🌐 Go Live on the Internet</h2>
+      <p class="muted" style="margin:0">Run <b>share.command</b> to publish a public link. Once running, the link + QR appear here.</p>
+    </div>
+
+    <!-- LAN QR + links -->
+    <div class="panel qrwrap">
+      <h2 style="margin-top:0">Local WiFi QR — fans on the venue network</h2>
+      <img id="qr" alt="Fan page QR code" src="/api/qr?path=/fan" /><div class="u" id="fanUrl"></div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-top:0">Open Views</h2>
+      <div class="row">
+        <a class="btn-ghost" href="/umpire" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Umpire ↗</a>
+        <a class="btn-ghost" href="/fan" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Fan ↗</a>
+        <a class="btn-ghost" href="/overlay?game=1" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Overlay C1 ↗</a>
+        <a class="btn-ghost" href="/overlay?game=2" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Overlay C2 ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== FIXTURES VIEW ===== -->
+  <div id="view-fixtures" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Add Match</h2>
+      <div class="addgrid">
+        <input type="text" id="newA" placeholder="Team A" /><input type="text" id="newCapA" placeholder="Captain A (optional)" />
+        <input type="text" id="newB" placeholder="Team B" /><input type="text" id="newCapB" placeholder="Captain B (optional)" />
+      </div>
+      <button class="btn-accent" id="btnAddFixture" style="width:100%;margin-top:10px">+ Add Match</button>
+      <h2>Schedule</h2>
+      <div id="fixtures"></div>
+      <p class="muted" style="margin-top:8px">Start games from the <a href="/umpire" style="color:var(--gold)">Umpire</a> page.</p>
+    </div>
+  </div>
+
+  <div class="scrim" id="editScrim"></div>
+  <div class="modal" id="editModal">
+    <h3>Edit Match</h3>
+    <div class="row2">
+      <div><label>Team A</label><input type="text" id="edA" /></div><div><label>Captain A</label><input type="text" id="edCapA" placeholder="optional" /></div>
+      <div><label>Team B</label><input type="text" id="edB" /></div><div><label>Captain B</label><input type="text" id="edCapB" placeholder="optional" /></div>
+    </div>
+    <div class="modal-actions"><button class="btn-ghost" data-edaction="cancel">Cancel</button><button class="btn-accent" data-edaction="save">Save</button></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let lastState=null;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1600); }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function setView(v){ $('view-settings').classList.toggle('hidden', v!=='settings'); $('view-fixtures').classList.toggle('hidden', v!=='fixtures');
+  document.querySelectorAll('.views button').forEach(b=>b.classList.toggle('active', b.dataset.view===v)); }
+
+async function api(path, body){ const res=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):null});
+  const d=await res.json().catch(()=>({})); if(!res.ok){toast(d.error||'Error');throw new Error('e');} render(d); return d; }
+
+function render(s){
+  lastState=s;
+  // live overview
+  const ov=$('overview');
+  if (s.games && s.games.length){
+    ov.innerHTML = s.games.map(g=>`<div class="ov"><div><div class="court">Court ${g.slot}${g.live.paused?' · PAUSED':' · LIVE'}</div><div class="nm">${escapeHtml(g.teamA)} v ${escapeHtml(g.teamB)}</div><div class="st">Set ${g.live.currentSet} · sets ${g.live.setsA}–${g.live.setsB}</div></div><div class="sc">${g.live.pointsA} : ${g.live.pointsB}</div></div>`).join('');
+  } else ov.innerHTML='<p class="muted" style="margin:0">No games are live right now.</p>';
+
+  // champion / runner-up selects
+  const teams=[...new Set(s.fixtures.flatMap(f=>[f.teamA,f.teamB]).filter(Boolean))];
+  const opts='<option value="">— select team —</option>'+teams.map(t=>`<option>${escapeHtml(t)}</option>`).join('');
+  const cs=$('champSelect'); if(cs._sig!==teams.join('|')){ cs._sig=teams.join('|'); cs.innerHTML=opts; } if(document.activeElement!==cs) cs.value=s.champion||'';
+  $('champNow').textContent = s.champion?('Current champion: 🏆 '+s.champion):'No champion set.';
+  const rs=$('runnerSelect'); if(rs._sig!==teams.join('|')){ rs._sig=teams.join('|'); rs.innerHTML=opts; } if(document.activeElement!==rs) rs.value=s.runnerUp||'';
+  $('runnerNow').textContent = s.runnerUp?('Current runner-up: 🥈 '+s.runnerUp):'No runner-up set.';
+
+  if(document.activeElement!==$('inAnnounce')) $('inAnnounce').value=s.announcement||'';
+  if(document.activeElement!==$('inYoutube')) $('inYoutube').value=s.youtubeUrl||'';
+  $('chkWatch').checked=!!s.showWatch; $('chkServe').checked=!!s.showServe;
+
+  if(s.publicUrl){ $('publicPanel').style.display=''; $('publicHint').style.display='none';
+    if($('publicUrl').textContent!==s.publicUrl+'/fan'){ $('publicUrl').textContent=s.publicUrl+'/fan'; $('publicQr').src='/api/qr?url='+encodeURIComponent(s.publicUrl+'/fan'); }
+    if(s.shortUrl){ $('shortWrap').style.display=''; $('shortUrl').textContent=s.shortUrl; if($('publicQr').dataset.short!==s.shortUrl){ $('publicQr').dataset.short=s.shortUrl; $('publicQr').src='/api/qr?url='+encodeURIComponent(s.shortUrl); } }
+    else $('shortWrap').style.display='none'; }
+  else { $('publicPanel').style.display='none'; $('publicHint').style.display=''; }
+
+  renderFixtures(s);
+}
+
+function renderFixtures(s){
+  const wrap=$('fixtures');
+  if(!s.fixtures.length){ wrap.innerHTML='<p class="muted">No fixtures yet. Add one above.</p>'; return; }
+  wrap.innerHTML='';
+  s.fixtures.forEach(f=>{
+    const liveG=(s.games||[]).find(g=>g.fixtureId===f.id);
+    const div=document.createElement('div'); div.className='fixture'+(liveG?' live':'');
+    let meta;
+    if(liveG) meta=`<div class="meta">● Live on Court ${liveG.slot}</div>`;
+    else if(f.status==='done'&&f.result){ const w=f.result.winner?(f.result.winner==='A'?f.teamA:f.teamB):'Draw'; meta=`<div class="meta">Done · ${f.result.setsA}–${f.result.setsB} · 🏆 ${escapeHtml(w)}</div>`; }
+    else meta=`<div class="meta">${f.status}</div>`;
+    const capA=f.captainA?` <span class="meta">(${escapeHtml(f.captainA)})</span>`:''; const capB=f.captainB?` <span class="meta">(${escapeHtml(f.captainB)})</span>`:'';
+    div.innerHTML=`<div class="names">${escapeHtml(f.teamA)}${capA} <span style="color:var(--muted)">vs</span> ${escapeHtml(f.teamB)}${capB}${meta}</div>
+      <div class="acts"><button class="btn-sm btn-ghost" data-edit="${f.id}">✎</button><button class="btn-sm btn-red" data-del="${f.id}">🗑</button></div>`;
+    wrap.appendChild(div);
+  });
+}
+
+document.body.addEventListener('click',(e)=>{
+  const t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.view) setView(t.dataset.view);
+  else if(t.dataset.del){ if(confirm('Delete this fixture?')) fetch('/api/fixtures/'+t.dataset.del,{method:'DELETE'}).then(r=>r.json()).then(render); }
+  else if(t.dataset.edit) startEdit(t.dataset.edit);
+  else if(t.dataset.edaction==='save') saveEdit();
+  else if(t.dataset.edaction==='cancel') closeEdit();
+});
+
+$('btnAnnounce').onclick=()=>api('/api/announcement',{text:$('inAnnounce').value});
+$('btnAnnounceClear').onclick=()=>{ $('inAnnounce').value=''; api('/api/announcement',{text:''}); };
+$('btnYoutube').onclick=()=>api('/api/match',{youtubeUrl:$('inYoutube').value});
+$('chkWatch').onchange=()=>api('/api/match',{showWatch:$('chkWatch').checked});
+$('chkServe').onchange=()=>api('/api/match',{showServe:$('chkServe').checked});
+$('btnCrown').onclick=()=>{ const v=$('champSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{champion:v}); toast('🏆 '+v+' crowned!'); };
+$('btnClearChamp').onclick=()=>api('/api/match',{champion:''});
+$('btnRunner').onclick=()=>{ const v=$('runnerSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{runnerUp:v}); toast('🥈 '+v); };
+$('btnClearRunner').onclick=()=>api('/api/match',{runnerUp:''});
+$('btnCopyPublic').onclick=()=>{ const t=$('publicUrl').textContent; navigator.clipboard?.writeText(t).then(()=>toast('Link copied')).catch(()=>toast(t)); };
+$('btnCopyShort').onclick=()=>{ const t=$('shortUrl').textContent; navigator.clipboard?.writeText(t).then(()=>toast('Short link copied')).catch(()=>toast(t)); };
+$('btnAddFixture').onclick=()=>{ const a=$('newA').value.trim(), b=$('newB').value.trim(); if(!a||!b){toast('Enter both team names');return;}
+  fetch('/api/fixtures',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamA:a,teamB:b,captainA:$('newCapA').value.trim(),captainB:$('newCapB').value.trim()})}).then(r=>r.json()).then(d=>{ render(d); ['newA','newB','newCapA','newCapB'].forEach(i=>$(i).value=''); }); };
+
+let editId=null;
+function startEdit(id){ const f=lastState.fixtures.find(x=>x.id===id); if(!f)return; editId=id; $('edA').value=f.teamA||''; $('edCapA').value=f.captainA||''; $('edB').value=f.teamB||''; $('edCapB').value=f.captainB||''; $('editModal').classList.add('open'); $('editScrim').classList.add('open'); }
+function closeEdit(){ $('editModal').classList.remove('open'); $('editScrim').classList.remove('open'); editId=null; }
+$('editScrim').onclick=closeEdit;
+function saveEdit(){ if(!editId){closeEdit();return;} const a=$('edA').value.trim(), b=$('edB').value.trim(); if(!a||!b){toast('Team names required');return;}
+  fetch('/api/fixtures/'+editId,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({teamA:a,teamB:b,captainA:$('edCapA').value.trim(),captainB:$('edCapB').value.trim()})}).then(r=>r.json()).then(d=>{ closeEdit(); try{render(d);}catch(e){} toast('Match updated'); }); }
+
+$('fanUrl').textContent = location.protocol+'//'+location.hostname+':'+location.port+'/fan';
+async function poll(){ try{ const r=await fetch('/api/state'); render(await r.json()); }catch(e){} }
+poll(); setInterval(poll, 2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -m 3 -o /dev/null -w \"/fan => HTTP %{http_code}\\\\n\" \"http://localhost:3000/fan\")",
+      "Bash(open \"http://localhost:3000/fan\")",
+      "Bash(open \"http://localhost:3000/overlay\")",
+      "Bash(curl -s -m 3 -o /dev/null -w \"/overlay => HTTP %{http_code}\\\\n\" \"http://localhost:3000/overlay\")",
+      "Bash(curl -s -m 3 -o /dev/null -w \"/admin => HTTP %{http_code}\\\\n\" \"http://localhost:3000/admin\")",
+      "Bash(open \"http://localhost:3000/admin\")",
+      "Bash(command -v cloudflared)",
+      "Bash(echo \"cloudflared: $\\(command -v cloudflared || echo NO\\)\")",
+      "Bash(command -v brew)",
+      "Bash(echo \"brew: $\\(command -v brew || echo NO\\)\")",
+      "Bash(command -v ngrok)",
+      "Bash(brew install *)"
+    ]
+  }
+}
