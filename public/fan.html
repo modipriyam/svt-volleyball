@@ -303,11 +303,19 @@
   .scorebug .sb-tag { font-weight:800; font-size:.66rem; letter-spacing:.1em; color:#ff6a5a; white-space:nowrap; }
   .scorebug .sb-tag.paused { color:var(--gold); }
   .scorebug .sb-set { font-weight:700; font-size:.7rem; letter-spacing:.06em; opacity:.85; white-space:nowrap; }
-  .btn-fs { position:absolute; bottom:10px; left:10px; z-index:4; cursor:pointer; border:none;
-    background:rgba(11,31,61,.75); color:#cfe0f5; border-radius:8px; padding:5px 9px;
-    font-size:1.1rem; line-height:1; border:1px solid rgba(255,255,255,.18); }
-  .btn-fs:hover { background:rgba(22,56,107,.9); }
-  .sb-delay { position:absolute; bottom:10px; right:10px; z-index:3; pointer-events:none;
+  .btn-fs { position:absolute; bottom:12px; right:12px; z-index:4; cursor:pointer; border:none;
+    display:flex; align-items:center; gap:7px;
+    background:rgba(0,0,0,.62); color:#fff;
+    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:1rem;
+    padding:9px 16px; border-radius:10px;
+    border:1.5px solid rgba(255,255,255,.35);
+    box-shadow:0 4px 16px rgba(0,0,0,.5);
+    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    transition: background .15s, transform .1s; }
+  .btn-fs:hover { background:rgba(22,56,107,.88); }
+  .btn-fs:active { transform: scale(.95); }
+  .btn-fs svg { width:18px; height:18px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; }
+  .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
   @media (max-width:520px){
@@ -487,7 +495,10 @@
           <div class="sb-side b" id="sbSideB"><span class="sb-nm" id="sbNmB">Team B</span><span class="pips sb-pips" id="sbPipsB"></span></div>
         </div>
         <div class="sb-delay hidden" id="sbDelay"></div>
-        <button class="btn-fs" id="btnFs" title="Fullscreen with score">⛶ Fullscreen</button>
+        <button class="btn-fs" id="btnFs">
+          <svg id="fsIcon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <span id="fsLabel">Fullscreen</span>
+        </button>
       </div>
       <button class="btn-closewatch hidden" id="btnCloseWatch">✕ Close Video</button>
     </div>
@@ -807,8 +818,12 @@ $('btnCloseWatch').onclick = () => {
 function isFullscreen() {
   return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
+const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
+const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
 function updateFsBtn() {
-  $('btnFs').textContent = isFullscreen() ? '⊡ Exit' : '⛶ Fullscreen';
+  const full = isFullscreen();
+  $('fsIcon').querySelector('path').setAttribute('d', full ? EXIT_ICON : FS_ICON);
+  $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
 $('btnFs').onclick = () => {
   if (isFullscreen()) {
