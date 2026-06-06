@@ -655,7 +655,7 @@ function render(s) {
       $('watchWrap').classList.remove('hidden');
       // If stream URL changed while embed is open, reload the iframe.
       if (embedOpen && streamId !== lastYt) {
-        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&playsinline=1&rel=0';
+        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&playsinline=1&rel=0&fs=0&modestbranding=1';
         lastYt = streamId;
       }
       // Update score bug live even while video is closed (ready for when fan opens it).
@@ -785,7 +785,7 @@ $('btnWatch').onclick = () => {
   const id = ytId(active.streamUrl);
   if (!id) return;
   embedOpen = true; lastYt = id;
-  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0';
+  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0&fs=0&modestbranding=1';
   $('vidWrap').classList.remove('hidden');
   $('btnWatch').classList.add('hidden');
   $('btnCloseWatch').classList.remove('hidden');
@@ -802,25 +802,26 @@ $('btnCloseWatch').onclick = () => {
   $('btnCloseWatch').classList.add('hidden');
 };
 
-// Fullscreen the whole vidwrap (not just the iframe) so the score bug stays visible.
-function enterVidFullscreen() {
-  const el = $('vidWrap');
-  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-  if (req) req.call(el);
+// Toggle fullscreen on vidwrap. YouTube's own fullscreen button is disabled via fs=0
+// in the embed URL, so this is the only fullscreen path — the score bug always comes with it.
+function isFullscreen() {
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
 }
-$('btnFs').onclick = enterVidFullscreen;
-
-// When YouTube's own fullscreen button is tapped, the iframe becomes the fullscreen
-// element and our score overlay is lost. Intercept: exit and re-enter with vidwrap.
-function onFullscreenChange() {
-  const fs = document.fullscreenElement || document.webkitFullscreenElement;
-  if (fs && fs !== $('vidWrap') && embedOpen) {
+function updateFsBtn() {
+  $('btnFs').textContent = isFullscreen() ? '⊡ Exit' : '⛶ Fullscreen';
+}
+$('btnFs').onclick = () => {
+  if (isFullscreen()) {
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if (exit) exit.call(document).then(() => enterVidFullscreen()).catch(() => {});
+    if (exit) exit.call(document);
+  } else {
+    const el = $('vidWrap');
+    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if (req) req.call(el);
   }
-}
-document.addEventListener('fullscreenchange', onFullscreenChange);
-document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+};
+document.addEventListener('fullscreenchange', updateFsBtn);
+document.addEventListener('webkitfullscreenchange', updateFsBtn);
 
 function renderSchedule(s) {
   const wrap = $('schedule');
