@@ -829,29 +829,41 @@ $('btnCloseWatch').onclick = () => {
 // ── Fullscreen (score-bug stays visible) ──────────────────────────────────────
 // iOS Safari blocks requestFullscreen on non-<video> elements. We use a CSS
 // fake-fullscreen on <body> class instead: position:fixed + overflow:hidden on
-// html/body makes it fill the screen on iOS just like native fullscreen.
 const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
 const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
-let fakeFs = false;
+let fakeFs = false, savedScrollY = 0;
 
 function updateFsBtn() {
   const full = fakeFs || !!(document.fullscreenElement || document.webkitFullscreenElement);
   $('fsIcon').querySelector('path').setAttribute('d', full ? EXIT_ICON : FS_ICON);
   $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
+
+// iOS Safari root cause: body { overflow-x:hidden } turns body into a scroll container,
+// so position:fixed children are placed relative to body layout, not the viewport.
+// Fix: set body to position:fixed itself (canonical iOS scroll-lock pattern).
+// A position:fixed body is NOT a scroll container, so fixed descendants snap to viewport.
 function enterFakeFs() {
   fakeFs = true;
-  document.documentElement.style.overflow = 'hidden';
-  document.body.style.overflow = 'hidden';
+  savedScrollY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top      = `-${savedScrollY}px`;
+  document.body.style.left     = '0';
+  document.body.style.right    = '0';
+  document.body.style.overflowX = 'hidden';
   document.body.classList.add('vid-faking');
   updateFsBtn();
 }
 function exitFakeFs() {
   if (!fakeFs) return;
   fakeFs = false;
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow = '';
   document.body.classList.remove('vid-faking');
+  document.body.style.position  = '';
+  document.body.style.top       = '';
+  document.body.style.left      = '';
+  document.body.style.right     = '';
+  document.body.style.overflowX = '';
+  window.scrollTo(0, savedScrollY);
   updateFsBtn();
 }
 
@@ -862,22 +874,23 @@ $('btnFs').onclick = () => {
     if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) exit.call(document);
     return;
   }
-  // Try native fullscreen (desktop Chrome/Firefox).
-  // iOS Safari: webkitRequestFullscreen exists on the element but is rejected/ignored
-  // for non-video divs → we use a timeout to detect if it actually worked.
+  // Desktop: try native fullscreen first.
+  // iOS Safari: requestFullscreen on a div is silently ignored (no error, no result),
+  // so we check after a short delay whether it actually activated.
   const el = $('vidWrap');
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
   if (req) {
-    const p = req.call(el);
-    if (p && typeof p.then === 'function') {
-      p.then(updateFsBtn).catch(() => enterFakeFs());
-    } else {
-      // No promise (old API) — check after a tick whether native FS actually activated
-      setTimeout(() => {
-        if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFakeFs();
-        else updateFsBtn();
-      }, 80);
-    }
+    try {
+      const p = req.call(el);
+      if (p && typeof p.then === 'function') {
+        p.then(updateFsBtn).catch(() => enterFakeFs());
+      } else {
+        setTimeout(() => {
+          if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFakeFs();
+          else updateFsBtn();
+        }, 120);
+      }
+    } catch(e) { enterFakeFs(); }
   } else {
     enterFakeFs();
   }
