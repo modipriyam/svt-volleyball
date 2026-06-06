@@ -99,7 +99,7 @@ function normalizeState() {
   if (!state.streams || typeof state.streams !== 'object') state.streams = {};
   for (let s = 1; s <= MAX_GAMES; s++) {
     const cur = state.streams[s] || {};
-    state.streams[s] = { url: String(cur.url || '').trim(), delay: Math.max(0, +cur.delay || 0) };
+    state.streams[s] = { url: String(cur.url || '').trim(), delay: Math.max(0, +cur.delay || 0), showBug: cur.showBug !== false };
   }
   if (!state.streams[1].url && state.youtubeUrl) state.streams[1].url = String(state.youtubeUrl).trim();
 }
@@ -213,7 +213,7 @@ function publicGame(g) {
   const stream = (state.streams && state.streams[g.slot]) || { url: '', delay: 0 };
   return { slot: g.slot, fixtureId: g.fixtureId, teamA: f.teamA, teamB: f.teamB,
     captainA: f.captainA || '', captainB: f.captainB || '',
-    streamUrl: stream.url || '', streamDelay: stream.delay || 0, live };
+    streamUrl: stream.url || '', streamDelay: stream.delay || 0, showBug: stream.showBug !== false, live };
 }
 
 // The state we send to clients.
@@ -533,12 +533,13 @@ app.post('/api/stream', mutate((req) => {
   const court = parseInt(b.court, 10);
   if (!(court >= 1 && court <= MAX_GAMES)) return { error: 'court must be 1 or 2' };
   if (!state.streams) state.streams = {};
-  const cur = state.streams[court] || { url: '', delay: 0 };
+  const cur = state.streams[court] || { url: '', delay: 0, showBug: true };
   if (b.url !== undefined) cur.url = String(b.url).trim();
   if (b.delay !== undefined) {
     const d = Math.round(+b.delay);
     cur.delay = Number.isFinite(d) ? Math.min(120, Math.max(0, d)) : 0;
   }
+  if (b.showBug !== undefined) cur.showBug = !!b.showBug;
   state.streams[court] = cur;
 }));
 

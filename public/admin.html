@@ -51,6 +51,8 @@
   .streamRow input[type=number] { flex:0 0 58px; text-align:center; }
   .streamRow .su { flex:0 0 auto; opacity:.6; font-size:.85rem; margin-left:-4px; }
   .streamRow button { flex:0 0 auto; }
+  .bug-toggle { display:flex; align-items:center; gap:5px; flex:0 0 auto; cursor:pointer; font-size:.8rem; font-weight:600; opacity:.85; white-space:nowrap; }
+  .bug-toggle input { width:15px; height:15px; cursor:pointer; accent-color:var(--accent); }
   .hint { font-size:.8rem; line-height:1.4; opacity:.7; }
 
   /* toggle switch */
@@ -126,17 +128,19 @@
       <h2 style="margin-top:0">Fan Announcement</h2>
       <div class="inline"><input type="text" id="inAnnounce" placeholder="e.g. Finals at 4pm" /><button class="btn-accent btn-sm" id="btnAnnounce">Push</button><button class="btn-ghost btn-sm" id="btnAnnounceClear">Clear</button></div>
       <h2>Live Video Streams</h2>
-      <p class="hint" style="margin:4px 0 10px">Paste each court's YouTube Live link. It plays <b>on the fan page</b> with the live score overlaid. Set a <b>score delay</b> (seconds) so the score lines up with the video's latency — try 15–20s for normal YouTube live, 0 = instant.</p>
+      <p class="hint" style="margin:4px 0 10px">Paste each court's YouTube Live link. It plays <b>on the fan page</b>. Set a <b>score delay</b> (s) to sync the score with the stream (~15–20s for YouTube live). Disable <b>score bug</b> if using OBS overlay instead.</p>
       <div class="streamRow"><span class="ct">Court 1</span>
         <input type="text" id="inYoutube1" placeholder="https://youtube.com/watch?v=..." />
         <input type="number" id="inDelay1" min="0" max="120" step="1" title="Score delay (seconds)" />
         <span class="su">s</span>
+        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug1" /><span>Score bug</span></label>
         <button class="btn-accent btn-sm" id="btnStream1">Save</button>
       </div>
       <div class="streamRow"><span class="ct">Court 2</span>
         <input type="text" id="inYoutube2" placeholder="https://youtube.com/watch?v=..." />
         <input type="number" id="inDelay2" min="0" max="120" step="1" title="Score delay (seconds)" />
         <span class="su">s</span>
+        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug2" /><span>Score bug</span></label>
         <button class="btn-accent btn-sm" id="btnStream2">Save</button>
       </div>
       <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkWatch" /><span class="slider"></span>Show <b>live video</b> on fan page</label>
@@ -236,6 +240,7 @@ function render(s){
     const u=$('inYoutube'+c), d=$('inDelay'+c);
     if(document.activeElement!==u) u.value=cf.url||'';
     if(document.activeElement!==d) d.value=(cf.delay!=null?cf.delay:0);
+    $('chkBug'+c).checked=(cf.showBug!==false);
   });
   $('chkWatch').checked=!!s.showWatch; $('chkServe').checked=!!s.showServe;
 
@@ -277,7 +282,7 @@ document.body.addEventListener('click',(e)=>{
 
 $('btnAnnounce').onclick=()=>api('/api/announcement',{text:$('inAnnounce').value});
 $('btnAnnounceClear').onclick=()=>{ $('inAnnounce').value=''; api('/api/announcement',{text:''}); };
-[1,2].forEach(c=>{ $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0}); toast('Court '+c+' stream saved'); }; });
+[1,2].forEach(c=>{ $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked}); toast('Court '+c+' stream saved'); }; });
 $('chkWatch').onchange=()=>api('/api/match',{showWatch:$('chkWatch').checked});
 $('chkServe').onchange=()=>api('/api/match',{showServe:$('chkServe').checked});
 $('btnCrown').onclick=()=>{ const v=$('champSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{champion:v}); toast('🏆 '+v+' crowned!'); };

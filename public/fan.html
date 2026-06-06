@@ -628,7 +628,8 @@ function render(s) {
         $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&mute=1&playsinline=1&rel=0';
         lastYt = streamId;
       }
-      $('scorebug').classList.remove('hidden');
+      if (active.showBug !== false) $('scorebug').classList.remove('hidden');
+      else $('scorebug').classList.add('hidden');
       $('sbNmA').textContent = active.teamA; $('sbNmB').textContent = active.teamB;
       $('sbPtsA').textContent = live.pointsA; $('sbPtsB').textContent = live.pointsB;
       pips($('sbPipsA'), live.setsA, live.totalSets); pips($('sbPipsB'), live.setsB, live.totalSets);
