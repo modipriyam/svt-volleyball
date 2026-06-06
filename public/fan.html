@@ -267,10 +267,6 @@
   .btn-watch:active { transform: scale(.97); }
   .btn-watch .live-dot { width:13px; height:13px; border-radius:50%; background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation: blink 1s infinite; }
   @keyframes glow { 0%,100%{ box-shadow:0 10px 30px rgba(219,43,29,.45);} 50%{ box-shadow:0 10px 42px rgba(219,43,29,.8);} }
-  .btn-closewatch { display:flex; width:100%; justify-content:center; align-items:center; gap:8px; cursor:pointer;
-    font-family:var(--cond); font-weight:800; letter-spacing:.1em; text-transform:uppercase; font-size:1rem;
-    color:#cfe0f5; padding:13px; border-radius:12px; margin-top:12px;
-    background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); }
   .btn-closewatch:active { transform: scale(.98); }
   .vidwrap { position:relative; width:100%; margin-top:14px; }
   .yt { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 14px; overflow:hidden;
@@ -303,23 +299,32 @@
   .scorebug .sb-tag { font-weight:800; font-size:.66rem; letter-spacing:.1em; color:#ff6a5a; white-space:nowrap; }
   .scorebug .sb-tag.paused { color:var(--gold); }
   .scorebug .sb-set { font-weight:700; font-size:.7rem; letter-spacing:.06em; opacity:.85; white-space:nowrap; }
-  .btn-fs { position:absolute; bottom:12px; right:12px; z-index:4; cursor:pointer; border:none;
-    display:flex; align-items:center; gap:7px;
-    background:rgba(0,0,0,.62); color:#fff;
-    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:1rem;
-    padding:9px 16px; border-radius:10px;
-    border:1.5px solid rgba(255,255,255,.35);
-    box-shadow:0 4px 16px rgba(0,0,0,.5);
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  /* video control bar — sits below the player, easy to reach on phone */
+  .vid-bar { display:flex; gap:10px; margin-top:10px; }
+  .btn-fs { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:none;
+    background:rgba(255,255,255,.1); color:#fff;
+    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:1.05rem;
+    padding:13px 18px; border-radius:12px;
+    border:1.5px solid rgba(255,255,255,.22);
     transition: background .15s, transform .1s; }
-  .btn-fs:hover { background:rgba(22,56,107,.88); }
-  .btn-fs:active { transform: scale(.95); }
-  .btn-fs svg { width:18px; height:18px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; }
-  /* CSS fake-fullscreen: works on iOS Safari where the Fullscreen API is blocked for divs */
-  .vid-fake-fs { position:fixed !important; inset:0 !important; z-index:9999 !important;
-    margin:0 !important; border-radius:0 !important; background:#000;
-    display:flex; flex-direction:column; justify-content:center; }
-  .vid-fake-fs .yt { border-radius:0; box-shadow:none; }
+  .btn-fs:active { transform: scale(.97); background:rgba(22,56,107,.7); }
+  .btn-fs svg { flex-shrink:0; }
+  .btn-closewatch { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    font-family:var(--cond); font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem;
+    color:#cfe0f5; padding:13px 18px; border-radius:12px;
+    background: rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); }
+  .btn-closewatch:active { transform: scale(.97); }
+  /* CSS fake-fullscreen — works on iOS Safari where requestFullscreen is blocked for divs.
+     Class goes on <body>; overflow:hidden on html+body is required so position:fixed works
+     correctly on iOS (overflow-x:hidden alone breaks fixed positioning there). */
+  body.vid-faking #vidWrap  { position:fixed !important; inset:0 !important; z-index:9999 !important;
+    margin:0 !important; border-radius:0 !important; background:#000 !important; }
+  body.vid-faking #ytBox    { position:absolute !important; inset:0 !important;
+    padding-bottom:0 !important; height:100% !important; border-radius:0 !important; box-shadow:none !important; }
+  body.vid-faking #vidBar   { position:fixed !important; bottom:0 !important; left:0 !important;
+    right:0 !important; z-index:10000 !important; margin:0 !important;
+    padding:12px !important; padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+    background:rgba(10,22,48,.96) !important; border-top:1px solid rgba(255,255,255,.14) !important; }
   .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
@@ -500,12 +505,18 @@
           <div class="sb-side b" id="sbSideB"><span class="sb-nm" id="sbNmB">Team B</span><span class="pips sb-pips" id="sbPipsB"></span></div>
         </div>
         <div class="sb-delay hidden" id="sbDelay"></div>
+      </div>
+      <!-- video control bar: always below the player, easy to reach -->
+      <div class="vid-bar hidden" id="vidBar">
         <button class="btn-fs" id="btnFs">
           <svg id="fsIcon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
           <span id="fsLabel">Fullscreen</span>
         </button>
+        <button class="btn-closewatch" id="btnCloseWatch">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Close Video
+        </button>
       </div>
-      <button class="btn-closewatch hidden" id="btnCloseWatch">✕ Close Video</button>
     </div>
 
     <!-- STANDINGS (full width) -->
@@ -589,10 +600,11 @@ makeConfetti($('champConfetti'), 24);
 
 let lastFanState = null;
 function hideVideo(){
+  exitFakeFs && exitFakeFs();
   $('watchWrap').classList.add('hidden');
   $('vidWrap').classList.add('hidden');
+  $('vidBar').classList.add('hidden');
   $('btnWatch').classList.remove('hidden');
-  $('btnCloseWatch').classList.add('hidden');
   $('scorebug').classList.add('hidden');
   $('sbDelay').classList.add('hidden');
   $('ytFrame').src = ''; lastYt = null; embedOpen = false;
@@ -803,26 +815,26 @@ $('btnWatch').onclick = () => {
   embedOpen = true; lastYt = id;
   $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0&fs=0&modestbranding=1';
   $('vidWrap').classList.remove('hidden');
+  $('vidBar').classList.remove('hidden');
   $('btnWatch').classList.add('hidden');
-  $('btnCloseWatch').classList.remove('hidden');
   if (active.showBug !== false) $('scorebug').classList.remove('hidden');
 };
 
 $('btnCloseWatch').onclick = () => {
+  exitFakeFs();
   embedOpen = false; lastYt = null;
   $('ytFrame').src = '';
   $('vidWrap').classList.add('hidden');
+  $('vidBar').classList.add('hidden');
   $('scorebug').classList.add('hidden');
   $('sbDelay').classList.add('hidden');
   $('btnWatch').classList.remove('hidden');
-  $('btnCloseWatch').classList.add('hidden');
 };
 
-// Toggle fullscreen on vidwrap. YouTube's own fullscreen button is disabled via fs=0
-// in the embed URL, so this is the only fullscreen path — the score bug always comes with it.
-function isFullscreen() {
-  return !!(document.fullscreenElement || document.webkitFullscreenElement);
-}
+// ── Fullscreen (score-bug stays visible) ──────────────────────────────────────
+// iOS Safari blocks requestFullscreen on non-<video> elements. We use a CSS
+// fake-fullscreen on <body> class instead: position:fixed + overflow:hidden on
+// html/body makes it fill the screen on iOS just like native fullscreen.
 const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
 const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
 let fakeFs = false;
@@ -832,28 +844,47 @@ function updateFsBtn() {
   $('fsIcon').querySelector('path').setAttribute('d', full ? EXIT_ICON : FS_ICON);
   $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
+function enterFakeFs() {
+  fakeFs = true;
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+  document.body.classList.add('vid-faking');
+  updateFsBtn();
+}
+function exitFakeFs() {
+  if (!fakeFs) return;
+  fakeFs = false;
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+  document.body.classList.remove('vid-faking');
+  updateFsBtn();
+}
 
 $('btnFs').onclick = () => {
+  if (fakeFs || !!(document.fullscreenElement || document.webkitFullscreenElement)) {
+    exitFakeFs();
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) exit.call(document);
+    return;
+  }
+  // Try native fullscreen (desktop Chrome/Firefox).
+  // iOS Safari: webkitRequestFullscreen exists on the element but is rejected/ignored
+  // for non-video divs → we use a timeout to detect if it actually worked.
   const el = $('vidWrap');
-  const nativeReq = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-  const nativeExit = document.exitFullscreen || document.webkitExitFullscreen;
-  const inNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-
-  if (fakeFs || inNativeFs) {
-    // Exit: remove fake-fs class and exit native fs if active
-    el.classList.remove('vid-fake-fs');
-    fakeFs = false;
-    if (inNativeFs && nativeExit) nativeExit.call(document);
-    updateFsBtn();
-  } else {
-    // Enter: try native first (desktop); fall back to CSS fake-fs (iOS Safari)
-    if (nativeReq) {
-      nativeReq.call(el).catch(() => {
-        el.classList.add('vid-fake-fs'); fakeFs = true; updateFsBtn();
-      });
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+  if (req) {
+    const p = req.call(el);
+    if (p && typeof p.then === 'function') {
+      p.then(updateFsBtn).catch(() => enterFakeFs());
     } else {
-      el.classList.add('vid-fake-fs'); fakeFs = true; updateFsBtn();
+      // No promise (old API) — check after a tick whether native FS actually activated
+      setTimeout(() => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFakeFs();
+        else updateFsBtn();
+      }, 80);
     }
+  } else {
+    enterFakeFs();
   }
 };
 document.addEventListener('fullscreenchange', updateFsBtn);
