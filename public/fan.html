@@ -315,6 +315,11 @@
   .btn-fs:hover { background:rgba(22,56,107,.88); }
   .btn-fs:active { transform: scale(.95); }
   .btn-fs svg { width:18px; height:18px; fill:none; stroke:#fff; stroke-width:2; stroke-linecap:round; }
+  /* CSS fake-fullscreen: works on iOS Safari where the Fullscreen API is blocked for divs */
+  .vid-fake-fs { position:fixed !important; inset:0 !important; z-index:9999 !important;
+    margin:0 !important; border-radius:0 !important; background:#000;
+    display:flex; flex-direction:column; justify-content:center; }
+  .vid-fake-fs .yt { border-radius:0; box-shadow:none; }
   .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
@@ -820,19 +825,35 @@ function isFullscreen() {
 }
 const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
 const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
+let fakeFs = false;
+
 function updateFsBtn() {
-  const full = isFullscreen();
+  const full = fakeFs || !!(document.fullscreenElement || document.webkitFullscreenElement);
   $('fsIcon').querySelector('path').setAttribute('d', full ? EXIT_ICON : FS_ICON);
   $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
+
 $('btnFs').onclick = () => {
-  if (isFullscreen()) {
-    const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if (exit) exit.call(document);
+  const el = $('vidWrap');
+  const nativeReq = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+  const nativeExit = document.exitFullscreen || document.webkitExitFullscreen;
+  const inNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+
+  if (fakeFs || inNativeFs) {
+    // Exit: remove fake-fs class and exit native fs if active
+    el.classList.remove('vid-fake-fs');
+    fakeFs = false;
+    if (inNativeFs && nativeExit) nativeExit.call(document);
+    updateFsBtn();
   } else {
-    const el = $('vidWrap');
-    const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
-    if (req) req.call(el);
+    // Enter: try native first (desktop); fall back to CSS fake-fs (iOS Safari)
+    if (nativeReq) {
+      nativeReq.call(el).catch(() => {
+        el.classList.add('vid-fake-fs'); fakeFs = true; updateFsBtn();
+      });
+    } else {
+      el.classList.add('vid-fake-fs'); fakeFs = true; updateFsBtn();
+    }
   }
 };
 document.addEventListener('fullscreenchange', updateFsBtn);
