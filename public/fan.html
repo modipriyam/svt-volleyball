@@ -257,24 +257,47 @@
   .sc-hist .pill { display:inline-block; margin:3px; background: rgba(255,255,255,.1); color:#dce6f6;
     font-family:var(--cond); font-weight:700; letter-spacing:.04em; border-radius:999px; padding:3px 13px; font-size:.86rem; }
 
-  /* ===== WATCH LIVE ===== */
-  .watchwrap { margin-top:0; text-align:center; }
-  .btn-watch { display:flex; width:100%; justify-content:center; align-items:center; gap:12px; cursor:pointer; border:none;
-    font-family:var(--cond); font-weight:800; letter-spacing:.14em; text-transform:uppercase; font-size:1.25rem;
-    color:#fff; padding:15px 34px; border-radius:14px;
-    background: linear-gradient(100deg, var(--red), #ff5640); box-shadow: 0 10px 30px rgba(219,43,29,.5);
-    animation: glow 2.2s ease-in-out infinite; }
-  .btn-watch:active { transform: scale(.97); }
-  .btn-watch .live-dot { width:13px; height:13px; border-radius:50%; background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation: blink 1s infinite; }
-  @keyframes glow { 0%,100%{ box-shadow:0 10px 30px rgba(219,43,29,.45);} 50%{ box-shadow:0 10px 42px rgba(219,43,29,.8);} }
-  .yt { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 14px; overflow:hidden; margin-top:14px;
-    box-shadow: 0 14px 36px rgba(0,0,0,.4); }
+  /* ===== LIVE VIDEO + SCORE BUG ===== */
+  .watchwrap { margin-top:0; }
+  .vidwrap { position:relative; width:100%; }
+  .yt { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 14px; overflow:hidden;
+    background:#000; box-shadow: 0 14px 36px rgba(0,0,0,.4); }
   .yt iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
-  .btn-closewatch { display:flex; width:100%; justify-content:center; align-items:center; gap:8px; cursor:pointer;
-    font-family:var(--cond); font-weight:800; letter-spacing:.1em; text-transform:uppercase; font-size:1rem;
-    color:#cfe0f5; padding:13px; border-radius:12px; margin-top:12px;
-    background: rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.16); }
-  .btn-closewatch:active { transform: scale(.98); }
+  /* broadcast lower-third-style score bug sitting on top of the video (top, so it
+     never covers YouTube's bottom control bar). pointer-events:none → taps reach the player. */
+  .scorebug { position:absolute; top:10px; left:10px; right:10px; z-index:3; pointer-events:none;
+    display:flex; align-items:stretch; max-width:560px; margin:0 auto;
+    font-family:var(--cond); color:#fff; border-radius:11px; overflow:hidden;
+    background: linear-gradient(180deg, rgba(11,31,61,.96), rgba(9,24,48,.92));
+    border:1px solid rgba(255,255,255,.16); box-shadow:0 8px 26px rgba(0,0,0,.5); }
+  .scorebug .sb-side { display:flex; flex-direction:column; justify-content:center; gap:4px; padding:7px 12px; min-width:0; flex:1; }
+  .scorebug .sb-side.b { align-items:flex-end; }
+  .scorebug .sb-nm { font-weight:800; letter-spacing:.04em; font-size:1.04rem; line-height:1; text-transform:uppercase;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .scorebug .sb-side.serving .sb-nm { color:var(--gold); }
+  .scorebug .sb-side.serving .sb-nm::after { content:'🏐'; font-size:.8em; margin-left:5px; }
+  .scorebug .sb-side.b.serving .sb-nm::after { margin-left:0; margin-right:5px; }
+  .scorebug .sb-side.b.serving .sb-nm { direction:rtl; }
+  .scorebug .sb-pips { display:flex; gap:4px; margin:0; }
+  .scorebug .sb-pips .pip { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.28); }
+  .scorebug .sb-pips .pip.on { background:var(--gold); box-shadow:0 0 6px var(--gold); }
+  .scorebug .sb-num { display:flex; align-items:center; justify-content:center; flex:0 0 auto; min-width:54px; padding:0 6px;
+    font-weight:800; font-size:2.5rem; line-height:1; }
+  .scorebug .sb-num.a { background:linear-gradient(180deg,#2b6fc4,#1c4a8c); }
+  .scorebug .sb-num.b { background:linear-gradient(180deg,var(--orange),var(--orange-d)); }
+  .scorebug .sb-mid { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    flex:0 0 auto; padding:0 9px; background:rgba(0,0,0,.28); }
+  .scorebug .sb-tag { font-weight:800; font-size:.66rem; letter-spacing:.1em; color:#ff6a5a; white-space:nowrap; }
+  .scorebug .sb-tag.paused { color:var(--gold); }
+  .scorebug .sb-set { font-weight:700; font-size:.7rem; letter-spacing:.06em; opacity:.85; white-space:nowrap; }
+  .sb-delay { position:absolute; bottom:10px; right:10px; z-index:3; pointer-events:none;
+    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
+    background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
+  @media (max-width:520px){
+    .scorebug .sb-nm { font-size:.84rem; } .scorebug .sb-num { font-size:1.9rem; min-width:42px; }
+    .scorebug .sb-side { padding:5px 8px; } .scorebug .sb-tag { font-size:.58rem; } .scorebug .sb-set { font-size:.6rem; }
+    .scorebug .sb-pips .pip { width:6px; height:6px; }
+  }
 
   /* ===== CARDS (dark glass) ===== */
   /* solid translucent (no backdrop-filter — blur is a major scroll-jank source on phones) */
@@ -429,9 +452,18 @@
 
     <!-- WATCH LIVE (full width, below both) -->
     <div class="col-watch watchwrap hidden anim d3" id="watchWrap">
-      <button class="btn-watch" id="btnWatch"><span class="live-dot"></span> Watch Live ▶</button>
-      <div class="yt hidden" id="ytBox"><iframe id="ytFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
-      <button class="btn-closewatch hidden" id="btnCloseWatch">✕ Close Video</button>
+      <div class="vidwrap">
+        <div class="yt"><iframe id="ytFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        <!-- broadcast score bug overlaid on the live video -->
+        <div class="scorebug hidden" id="scorebug">
+          <div class="sb-side a" id="sbSideA"><span class="sb-nm" id="sbNmA">Team A</span><span class="pips sb-pips" id="sbPipsA"></span></div>
+          <div class="sb-num a" id="sbPtsA">0</div>
+          <div class="sb-mid"><div class="sb-tag" id="sbTag">● LIVE</div><div class="sb-set" id="sbSet">SET 1</div></div>
+          <div class="sb-num b" id="sbPtsB">0</div>
+          <div class="sb-side b" id="sbSideB"><span class="sb-nm" id="sbNmB">Team B</span><span class="pips sb-pips" id="sbPipsB"></span></div>
+        </div>
+        <div class="sb-delay hidden" id="sbDelay"></div>
+      </div>
     </div>
 
     <!-- STANDINGS (full width) -->
@@ -449,7 +481,36 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-let lastYt = null, prevA = null, prevB = null, embedOpen = false, lastTicker = '', tickerHalf = 0, lastSchedSig = '', lastStandSig = '', selectedGame = '', lastGameId = '';
+let lastYt = null, prevA = null, prevB = null, lastTicker = '', tickerHalf = 0, lastSchedSig = '', lastStandSig = '', selectedGame = '', lastGameId = '';
+
+// ===== Score-delay buffer =====
+// Each poll records a timestamped snapshot of every live game's score. When a
+// court has a stream delay set, the page shows the snapshot from `delay` seconds
+// ago so the on-screen score lines up with the (latent) video. delay 0 = live.
+const scoreBuffers = {};
+function recordSnaps(s){
+  const now = Date.now();
+  (s.games||[]).forEach((g)=>{ const l=g.live||{};
+    const buf = scoreBuffers[g.fixtureId] || (scoreBuffers[g.fixtureId]=[]);
+    buf.push({ t:now, pointsA:l.pointsA, pointsB:l.pointsB, setsA:l.setsA, setsB:l.setsB,
+      serving:l.serving, currentSet:l.currentSet, totalSets:l.totalSets, paused:l.paused, setHistory:l.setHistory });
+    const cutoff = now - 130000;            // keep ~2 min of history
+    while (buf.length>1 && buf[0].t < cutoff) buf.shift();
+  });
+  // drop buffers for games that ended
+  const ids = new Set((s.games||[]).map(g=>g.fixtureId));
+  Object.keys(scoreBuffers).forEach(id=>{ if(!ids.has(id)) delete scoreBuffers[id]; });
+}
+// The score object to DISPLAY for a game: delayed snapshot if delaySec>0, else live.
+function displayLive(g, delaySec){
+  if (!delaySec) return g.live;
+  const buf = scoreBuffers[g.fixtureId];
+  if (!buf || !buf.length) return g.live;
+  const target = Date.now() - delaySec*1000;
+  let chosen = buf[0];
+  for (let i=0;i<buf.length;i++){ if (buf[i].t <= target) chosen = buf[i]; else break; }
+  return chosen;
+}
 
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function ytId(url){ if(!url) return null; const m=url.match(/(?:youtu\.be\/|v=|\/embed\/|\/live\/|\/shorts\/)([A-Za-z0-9_-]{6,})/); return m?m[1]:null; }
@@ -484,7 +545,13 @@ function makeConfetti(el, n) {
 }
 makeConfetti($('champConfetti'), 24);
 
-let watchUrl = '', lastFanState = null;
+let lastFanState = null;
+function hideVideo(){
+  $('watchWrap').classList.add('hidden');
+  $('scorebug').classList.add('hidden');
+  $('sbDelay').classList.add('hidden');
+  if (lastYt) { $('ytFrame').src = ''; lastYt = null; }
+}
 function render(s) {
   lastFanState = s;
   // Champion banner
@@ -520,7 +587,13 @@ function render(s) {
     selectedGame = active.fixtureId;
     $('liveCard').classList.remove('hidden');
     $('noLive').classList.add('hidden');
-    const live = active.live;
+    // Show the video (with its court's stream delay) only when admin enabled it
+    // and this court has a valid stream link. The displayed score is delayed to
+    // match the video, keeping the whole page in sync with what's on screen.
+    const streamId = ytId(active.streamUrl);
+    const videoOn = s.showWatch && !!streamId;
+    const delaySec = videoOn ? (active.streamDelay || 0) : 0;
+    const live = displayLive(active, delaySec);
     $('teamA').textContent = active.teamA;
     $('teamB').textContent = active.teamB;
     $('capA').textContent = active.captainA ? '👤 ' + active.captainA : '';
@@ -547,23 +620,33 @@ function render(s) {
       hw.innerHTML = live.setHistory.map((x,i)=>`<span class="pill">Set ${i+1}&nbsp; ${x[0]}–${x[1]}</span>`).join('');
       hw.classList.remove('hidden');
     } else hw.classList.add('hidden');
+
+    // ---- live video + overlaid score bug (per court) ----
+    if (videoOn) {
+      $('watchWrap').classList.remove('hidden');
+      if (streamId !== lastYt) {
+        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&mute=1&playsinline=1&rel=0';
+        lastYt = streamId;
+      }
+      $('scorebug').classList.remove('hidden');
+      $('sbNmA').textContent = active.teamA; $('sbNmB').textContent = active.teamB;
+      $('sbPtsA').textContent = live.pointsA; $('sbPtsB').textContent = live.pointsB;
+      pips($('sbPipsA'), live.setsA, live.totalSets); pips($('sbPipsB'), live.setsB, live.totalSets);
+      $('sbSet').textContent = 'SET ' + live.currentSet + ' / ' + (live.totalSets || 3);
+      const st = $('sbTag');
+      if (live.paused) { st.textContent = 'PAUSED'; st.className = 'sb-tag paused'; }
+      else { st.textContent = '● LIVE'; st.className = 'sb-tag'; }
+      $('sbSideA').classList.toggle('serving', s.showServe && live.serving === 'A');
+      $('sbSideB').classList.toggle('serving', s.showServe && live.serving === 'B');
+      const dl = $('sbDelay');
+      if (delaySec > 0) { dl.textContent = '⏱ score +' + delaySec + 's'; dl.classList.remove('hidden'); }
+      else dl.classList.add('hidden');
+    } else hideVideo();
   } else {
     $('liveCard').classList.add('hidden');
     $('noLive').classList.remove('hidden');
     prevA = prevB = null; lastGameId = '';
-  }
-
-  // Watch Live button — only when admin enabled it AND a valid URL exists
-  const id = ytId(s.youtubeUrl);
-  watchUrl = s.youtubeUrl || '';
-  if (s.showWatch && id) {
-    $('watchWrap').classList.remove('hidden');
-    if (embedOpen && id !== lastYt) { $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1'; lastYt = id; }
-  } else {
-    $('watchWrap').classList.add('hidden');
-    $('ytBox').classList.add('hidden'); $('ytFrame').src=''; embedOpen=false; lastYt=null;
-    $('btnWatch').classList.remove('hidden');
-    $('btnCloseWatch').classList.add('hidden');
+    hideVideo();
   }
 
   buildTicker(s);
@@ -652,23 +735,6 @@ $('gameTabs').addEventListener('click', (e) => {
   selectedGame = b.dataset.fgame;
   if (lastFanState) render(lastFanState);
 });
-
-$('btnWatch').onclick = () => {
-  const id = ytId(watchUrl);
-  if (!id) return;
-  embedOpen = true; lastYt = id;
-  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1';
-  $('ytBox').classList.remove('hidden');
-  $('btnWatch').classList.add('hidden');
-  $('btnCloseWatch').classList.remove('hidden');
-};
-$('btnCloseWatch').onclick = () => {
-  embedOpen = false; lastYt = null;
-  $('ytFrame').src = '';                       // stops playback
-  $('ytBox').classList.add('hidden');
-  $('btnCloseWatch').classList.add('hidden');
-  $('btnWatch').classList.remove('hidden');
-};
 
 function renderSchedule(s) {
   const wrap = $('schedule');
@@ -792,7 +858,7 @@ maybeShowAlertModal();
 
 // Polling is the reliable baseline (works through tunnels/proxies that buffer
 // SSE); SSE is layered on top for instant updates on the local network.
-async function poll(){ try{ const r=await fetch('/api/state'); render(await r.json()); }catch(e){} }
+async function poll(){ try{ const r=await fetch('/api/state'); const s=await r.json(); recordSnaps(s); render(s); }catch(e){} }
 function connect(){
   poll();                              // immediate data on load
   setInterval(poll, 2000);             // lightweight polling (no long-lived connection)

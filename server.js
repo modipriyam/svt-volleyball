@@ -33,7 +33,11 @@ function defaultState() {
   return {
     fixtures: [],
     youtubeUrl: '',
-    showWatch: false,     // whether the "Watch Live" button shows on the fan page
+    // Per-court live stream: the YouTube link shown (embedded) on the fan page for
+    // that court's game, plus a score-display delay (seconds) to line the overlaid
+    // score up with the stream's latency. delay 0 = score updates immediately.
+    streams: { 1: { url: '', delay: 0 }, 2: { url: '', delay: 0 } },
+    showWatch: false,     // whether the embedded live video shows on the fan page
     showServe: false,     // whether serve tracking (buttons + indicator) is enabled
     champion: '',         // tournament champion team name ('' = none)
     runnerUp: '',         // tournament runner-up team name ('' = none)
@@ -91,6 +95,13 @@ function normalizeState() {
   if (!Array.isArray(state.games)) state.games = [];
   state.games.forEach((g) => { g.live = Object.assign(blankLive(), g.live || {}); });
   delete state.activeMatchId; delete state.live;  // migrate old single-game saves
+  // Ensure per-court stream config exists; migrate a legacy single youtubeUrl to court 1.
+  if (!state.streams || typeof state.streams !== 'object') state.streams = {};
+  for (let s = 1; s <= MAX_GAMES; s++) {
+    const cur = state.streams[s] || {};
+    state.streams[s] = { url: String(cur.url || '').trim(), delay: Math.max(0, +cur.delay || 0) };
+  }
+  if (!state.streams[1].url && state.youtubeUrl) state.streams[1].url = String(state.youtubeUrl).trim();
 }
 
 async function loadState() {
@@ -199,8 +210,10 @@ function publicGame(g) {
   const live = Object.assign({}, g.live);
   live.elapsedMs = computedElapsed(g.live);
   delete live._lastResumeAt;
+  const stream = (state.streams && state.streams[g.slot]) || { url: '', delay: 0 };
   return { slot: g.slot, fixtureId: g.fixtureId, teamA: f.teamA, teamB: f.teamB,
-    captainA: f.captainA || '', captainB: f.captainB || '', live };
+    captainA: f.captainA || '', captainB: f.captainB || '',
+    streamUrl: stream.url || '', streamDelay: stream.delay || 0, live };
 }
 
 // The state we send to clients.
@@ -208,6 +221,7 @@ function publicState() {
   return {
     fixtures: state.fixtures,
     youtubeUrl: state.youtubeUrl,
+    streams: state.streams,
     showWatch: state.showWatch,
     showServe: state.showServe,
     champion: state.champion || '',
@@ -511,6 +525,21 @@ app.post('/api/match', mutate((req) => {
   if (req.body && req.body.runnerUp !== undefined) {
     state.runnerUp = String(req.body.runnerUp).trim();
   }
+}));
+
+// Set a court's live-stream URL and/or its score-display delay (seconds).
+app.post('/api/stream', mutate((req) => {
+  const b = req.body || {};
+  const court = parseInt(b.court, 10);
+  if (!(court >= 1 && court <= MAX_GAMES)) return { error: 'court must be 1 or 2' };
+  if (!state.streams) state.streams = {};
+  const cur = state.streams[court] || { url: '', delay: 0 };
+  if (b.url !== undefined) cur.url = String(b.url).trim();
+  if (b.delay !== undefined) {
+    const d = Math.round(+b.delay);
+    cur.delay = Number.isFinite(d) ? Math.min(120, Math.max(0, d)) : 0;
+  }
+  state.streams[court] = cur;
 }));
 
 app.post('/api/announcement', mutate((req) => {
