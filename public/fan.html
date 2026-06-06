@@ -487,7 +487,7 @@
           <div class="sb-side b" id="sbSideB"><span class="sb-nm" id="sbNmB">Team B</span><span class="pips sb-pips" id="sbPipsB"></span></div>
         </div>
         <div class="sb-delay hidden" id="sbDelay"></div>
-        <button class="btn-fs" id="btnFs" title="Fullscreen (keeps score visible)">⛶</button>
+        <button class="btn-fs" id="btnFs" title="Fullscreen with score">⛶ Fullscreen</button>
       </div>
       <button class="btn-closewatch hidden" id="btnCloseWatch">✕ Close Video</button>
     </div>
@@ -803,11 +803,24 @@ $('btnCloseWatch').onclick = () => {
 };
 
 // Fullscreen the whole vidwrap (not just the iframe) so the score bug stays visible.
-$('btnFs').onclick = () => {
+function enterVidFullscreen() {
   const el = $('vidWrap');
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
   if (req) req.call(el);
-};
+}
+$('btnFs').onclick = enterVidFullscreen;
+
+// When YouTube's own fullscreen button is tapped, the iframe becomes the fullscreen
+// element and our score overlay is lost. Intercept: exit and re-enter with vidwrap.
+function onFullscreenChange() {
+  const fs = document.fullscreenElement || document.webkitFullscreenElement;
+  if (fs && fs !== $('vidWrap') && embedOpen) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document).then(() => enterVidFullscreen()).catch(() => {});
+  }
+}
+document.addEventListener('fullscreenchange', onFullscreenChange);
+document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 
 function renderSchedule(s) {
   const wrap = $('schedule');
