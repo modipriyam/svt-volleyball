@@ -645,7 +645,7 @@ app.get('/api/qr', async (req, res) => {
 
 // --- Pages ------------------------------------------------------------------
 
-app.get('/', (req, res) => res.redirect('/umpire'));
+app.get('/', (req, res) => res.redirect('/fan'));
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/umpire', (req, res) => res.sendFile(path.join(__dirname, 'public', 'umpire.html')));
 app.get('/overlay', (req, res) => res.sendFile(path.join(__dirname, 'public', 'overlay.html')));
