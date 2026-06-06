@@ -267,7 +267,7 @@
   .btn-watch:active { transform: scale(.97); }
   .btn-watch .live-dot { width:13px; height:13px; border-radius:50%; background:#fff; box-shadow:0 0 0 0 rgba(255,255,255,.7); animation: blink 1s infinite; }
   @keyframes glow { 0%,100%{ box-shadow:0 10px 30px rgba(219,43,29,.45);} 50%{ box-shadow:0 10px 42px rgba(219,43,29,.8);} }
-  .btn-closewatch:active { transform: scale(.98); }
+
   .vidwrap { position:relative; width:100%; margin-top:14px; }
   .yt { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 14px; overflow:hidden;
     background:#000; box-shadow: 0 14px 36px rgba(0,0,0,.4); }
@@ -301,19 +301,14 @@
   .scorebug .sb-set { font-weight:700; font-size:.7rem; letter-spacing:.06em; opacity:.85; white-space:nowrap; }
   /* video control bar — sits below the player, easy to reach on phone */
   .vid-bar { display:flex; gap:10px; margin-top:10px; }
-  .btn-fs { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:none;
-    background:rgba(255,255,255,.1); color:#fff;
-    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:1.05rem;
-    padding:13px 18px; border-radius:12px;
-    border:1.5px solid rgba(255,255,255,.22);
-    transition: background .15s, transform .1s; }
-  .btn-fs:active { transform: scale(.97); background:rgba(22,56,107,.7); }
-  .btn-fs svg { flex-shrink:0; }
-  .btn-closewatch { flex:1; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
-    font-family:var(--cond); font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-size:1.05rem;
-    color:#cfe0f5; padding:13px 18px; border-radius:12px;
-    background: rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); }
-  .btn-closewatch:active { transform: scale(.97); }
+  .btn-fs, .btn-closewatch {
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer;
+    font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:1rem;
+    color:#fff; padding:11px 14px; border-radius:12px; border:none;
+    transition: opacity .15s, transform .1s; }
+  .btn-fs { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); }
+  .btn-closewatch { background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); color:#cfe0f5; }
+  .btn-fs:active, .btn-closewatch:active { transform: scale(.96); opacity:.8; }
   /* CSS fake-fullscreen — works on iOS Safari where requestFullscreen is blocked for divs.
      Class goes on <body>; overflow:hidden on html+body is required so position:fixed works
      correctly on iOS (overflow-x:hidden alone breaks fixed positioning there). */
@@ -509,7 +504,7 @@
       <!-- video control bar: always below the player, easy to reach -->
       <div class="vid-bar hidden" id="vidBar">
         <button class="btn-fs" id="btnFs">
-          <svg id="fsIcon" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <svg id="fsIcon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
           <span id="fsLabel">Fullscreen</span>
         </button>
         <button class="btn-closewatch" id="btnCloseWatch">
