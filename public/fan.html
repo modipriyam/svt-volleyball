@@ -521,8 +521,25 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.3</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.4</footer>
   </div>
+
+<!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
+     position:fixed covers the full viewport on iOS Safari without any hacks. -->
+<div id="fsOverlay" class="hidden">
+  <iframe id="fsFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+  <div class="scorebug hidden" id="fsBug"></div>
+  <div id="fsCtrl">
+    <button class="btn-fs" id="fsBtnExit">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+      <span>Exit</span>
+    </button>
+    <button class="btn-closewatch" id="fsBtnClose">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Close Video
+    </button>
+  </div>
+</div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -1032,22 +1049,5 @@ function connect(){
 }
 connect();
 </script>
-
-<!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
-     position:fixed covers the full viewport on iOS Safari without any hacks. -->
-<div id="fsOverlay" class="hidden">
-  <iframe id="fsFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
-  <div class="scorebug hidden" id="fsBug"></div>
-  <div id="fsCtrl">
-    <button class="btn-fs" id="fsBtnExit">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
-      <span>Exit</span>
-    </button>
-    <button class="btn-closewatch" id="fsBtnClose">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      Close Video
-    </button>
-  </div>
-</div>
 </body>
 </html>
