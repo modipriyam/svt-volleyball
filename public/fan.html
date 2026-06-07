@@ -314,9 +314,13 @@
   #fsOverlay { position:fixed; top:0; right:0; bottom:0; left:0; z-index:9999; background:#000; overflow:hidden; }
   #fsOverlay.hidden { display:none; }
   #fsOverlay > iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
-  #fsCtrl { position:fixed; bottom:0; left:0; right:0; z-index:10000; display:flex; gap:10px;
-    padding:12px; padding-bottom:calc(12px + env(safe-area-inset-bottom));
-    background:rgba(10,22,48,.96); border-top:1px solid rgba(255,255,255,.14); }
+  /* Score bug in the overlay is 20% bigger than the in-page version */
+  #fsOverlay .scorebug { transform:scale(1.2); transform-origin:top center; }
+  /* Compact control bar — buttons are auto-width and centred, bar is shorter */
+  #fsCtrl { position:fixed; bottom:0; left:0; right:0; z-index:10000; display:flex; justify-content:center; gap:12px;
+    padding:8px 16px; padding-bottom:calc(8px + env(safe-area-inset-bottom));
+    background:rgba(10,22,48,.82); border-top:1px solid rgba(255,255,255,.1); }
+  #fsCtrl .btn-fs, #fsCtrl .btn-closewatch { flex:none; padding:7px 20px; font-size:.88rem; }
   .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
@@ -521,7 +525,7 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.4</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.5</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
@@ -692,7 +696,7 @@ function render(s) {
       $('watchWrap').classList.remove('hidden');
       // If stream URL changed while embed is open, reload the iframe.
       if (embedOpen && streamId !== lastYt) {
-        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&playsinline=1&rel=0&fs=0&modestbranding=1';
+        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1';
         lastYt = streamId;
       }
       // Update score bug live even while video is closed (ready for when fan opens it).
@@ -823,7 +827,7 @@ $('btnWatch').onclick = () => {
   const id = ytId(active.streamUrl);
   if (!id) return;
   embedOpen = true; lastYt = id;
-  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&playsinline=1&rel=0&fs=0&modestbranding=1';
+  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1';
   $('vidWrap').classList.remove('hidden');
   $('vidBar').classList.remove('hidden');
   $('btnWatch').classList.add('hidden');
