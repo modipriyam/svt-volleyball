@@ -319,8 +319,16 @@
   /* Compact control bar — buttons are auto-width and centred, bar is shorter */
   #fsCtrl { position:fixed; bottom:0; left:0; right:0; z-index:10000; display:flex; justify-content:center; gap:12px;
     padding:8px 16px; padding-bottom:calc(8px + env(safe-area-inset-bottom));
-    background:rgba(10,22,48,.82); border-top:1px solid rgba(255,255,255,.1); }
+    background:rgba(10,22,48,.82); border-top:1px solid rgba(255,255,255,.1);
+    transition: opacity .28s ease, transform .28s ease; }
+  #fsCtrl.ctrl-hidden { opacity:0; transform:translateY(100%); pointer-events:none; }
   #fsCtrl .btn-fs, #fsCtrl .btn-closewatch { flex:none; padding:7px 20px; font-size:.88rem; }
+  /* Tap zone: sits above the iframe (z-index 1) so parent-doc click events land here;
+     active only when controls are hidden so YouTube stays interactive otherwise. */
+  #fsTapZone { position:absolute; top:0; left:0; right:0; bottom:0; z-index:4; pointer-events:none; }
+  #fsTapZone.active { pointer-events:auto; }
+  /* Scorebug in overlay is display-only — let taps fall through to the iframe. */
+  #fsBug { pointer-events:none; }
   .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
@@ -525,13 +533,14 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.6</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.7</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
      position:fixed covers the full viewport on iOS Safari without any hacks. -->
 <div id="fsOverlay" class="hidden">
   <iframe id="fsFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+  <div id="fsTapZone"></div>
   <div class="scorebug hidden" id="fsBug"></div>
   <div id="fsCtrl">
     <button class="btn-fs" id="fsBtnExit">
@@ -864,7 +873,19 @@ $('btnCloseWatch').onclick = () => {
 // window) so autoplay works.
 const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
 const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
-let fakeFs = false;
+let fakeFs = false, fsCtrlTimer = null;
+
+function showFsCtrl() {
+  $('fsCtrl').classList.remove('ctrl-hidden');
+  $('fsTapZone').classList.remove('active');
+  clearTimeout(fsCtrlTimer);
+  fsCtrlTimer = setTimeout(hideFsCtrl, 3000);
+}
+function hideFsCtrl() {
+  clearTimeout(fsCtrlTimer);
+  $('fsCtrl').classList.add('ctrl-hidden');
+  $('fsTapZone').classList.add('active');
+}
 
 function updateFsBtn() {
   const full = fakeFs || !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -881,17 +902,22 @@ function syncFsBug() {
 
 function enterFakeFs() {
   fakeFs = true;
-  if (!$('fsFrame').src) $('fsFrame').src = $('ytFrame').src; // fallback if not pre-loaded
+  if (!$('fsFrame').src) $('fsFrame').src = $('ytFrame').src;
   syncFsBug();
   $('fsOverlay').classList.remove('hidden');
   updateFsBtn();
+  showFsCtrl(); // show controls briefly; auto-hides after 3 s
 }
 
 function exitFakeFs() {
   if (!fakeFs) return;
   fakeFs = false;
+  clearTimeout(fsCtrlTimer);
   $('fsOverlay').classList.add('hidden');
   $('fsFrame').src = '';
+  // Reset ctrl state for next open
+  $('fsCtrl').classList.remove('ctrl-hidden');
+  $('fsTapZone').classList.remove('active');
   updateFsBtn();
 }
 
@@ -927,8 +953,12 @@ $('btnFs').onclick = () => {
   }
 };
 
-$('fsBtnExit').onclick  = () => exitFakeFs();
-$('fsBtnClose').onclick = () => $('btnCloseWatch').click();
+$('fsTapZone').addEventListener('click', showFsCtrl);
+// Tapping anywhere on the control bar resets the auto-hide timer.
+$('fsCtrl').addEventListener('click', showFsCtrl);
+// Stop propagation on buttons so the fsCtrl listener doesn't fight with exit/close actions.
+$('fsBtnExit').onclick  = (e) => { e.stopPropagation(); exitFakeFs(); };
+$('fsBtnClose').onclick = (e) => { e.stopPropagation(); $('btnCloseWatch').click(); };
 
 document.addEventListener('fullscreenchange', updateFsBtn);
 document.addEventListener('webkitfullscreenchange', updateFsBtn);
