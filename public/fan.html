@@ -531,7 +531,7 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.8</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.9</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
@@ -555,6 +555,20 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let lastYt = null, prevA = null, prevB = null, embedOpen = false, lastTicker = '', tickerHalf = 0, tickerTx = 0, lastSchedSig = '', lastStandSig = '', selectedGame = '', lastGameId = '';
+// iOS/Safari: moving an iframe in the DOM triggers a reload (WebKit bug #13574),
+// so we fall back to a fresh iframe with &start= to resume at the right time.
+// All other browsers: we move the existing iframe — zero restart.
+const isSafariLike = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+  (/^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent));
+let ytCurrentTime = 0;
+window.addEventListener('message', (evt) => {
+  if (!evt.data || typeof evt.data !== 'string') return;
+  try {
+    const d = JSON.parse(evt.data);
+    if (d.event === 'infoDelivery' && d.info && d.info.currentTime != null)
+      ytCurrentTime = d.info.currentTime;
+  } catch(e) {}
+});
 
 // ===== Score-delay buffer =====
 // Each poll records a timestamped snapshot of every live game's score. When a
@@ -703,7 +717,7 @@ function render(s) {
       $('watchWrap').classList.remove('hidden');
       // If stream URL changed while embed is open, reload the iframe.
       if (embedOpen && streamId !== lastYt) {
-        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1';
+        $('ytFrame').src = 'https://www.youtube.com/embed/' + streamId + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1&enablejsapi=1';
         lastYt = streamId;
       }
       // Update score bug live even while video is closed (ready for when fan opens it).
@@ -825,6 +839,7 @@ $('gameTabs').addEventListener('click', (e) => {
   if (!b) return;
   // Switching courts closes the current video so the new court's stream loads fresh.
   if (b.dataset.fgame !== selectedGame) {
+    exitFakeFs();   // ensure ytFrame is back in ytBox before we clear it
     $('ytFrame').src = ''; lastYt = null; embedOpen = false;
     $('vidWrap').classList.add('hidden');
     $('btnWatch').classList.remove('hidden');
@@ -843,7 +858,7 @@ $('btnWatch').onclick = () => {
   const id = ytId(active.streamUrl);
   if (!id) return;
   embedOpen = true; lastYt = id;
-  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1';
+  $('ytFrame').src = 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1&enablejsapi=1';
   $('vidWrap').classList.remove('hidden');
   $('vidBar').classList.remove('hidden');
   $('btnWatch').classList.add('hidden');
@@ -898,22 +913,42 @@ function syncFsBug() {
   dst.className = src.className;
 }
 
+// Build the overlay src for the Safari/iOS path, resuming at the current position.
+function buildFsSrc() {
+  if (!lastYt) return $('ytFrame').src;
+  let url = 'https://www.youtube.com/embed/' + lastYt +
+    '?autoplay=1&mute=1&playsinline=1&rel=0&fs=0&modestbranding=1&enablejsapi=1';
+  if (ytCurrentTime > 5) url += '&start=' + Math.floor(ytCurrentTime);
+  return url;
+}
+
 function enterFakeFs() {
   fakeFs = true;
-  if (!$('fsFrame').src) $('fsFrame').src = $('ytFrame').src;
   syncFsBug();
   $('fsOverlay').classList.remove('hidden');
+  if (!isSafariLike) {
+    // Move the live iframe — video keeps playing without any interruption.
+    $('fsFrame').style.display = 'none';
+    $('fsOverlay').insertBefore($('ytFrame'), $('fsTapZone'));
+  } else {
+    // Safari/iOS: can't move iframes (they reload). Load a fresh one at the current time.
+    if (!$('fsFrame').src) $('fsFrame').src = buildFsSrc();
+  }
   updateFsBtn();
-  showFsCtrl(); // show controls briefly; auto-hides after 3 s
+  showFsCtrl();
 }
 
 function exitFakeFs() {
   if (!fakeFs) return;
   fakeFs = false;
   clearTimeout(fsCtrlTimer);
+  if (!isSafariLike) {
+    $('ytBox').appendChild($('ytFrame'));   // move back — playback continues
+    $('fsFrame').style.display = '';
+  } else {
+    $('fsFrame').src = '';
+  }
   $('fsOverlay').classList.add('hidden');
-  $('fsFrame').src = '';
-  // Reset ctrl state for next open
   $('fsCtrl').classList.remove('ctrl-hidden');
   $('fsTapZone').classList.remove('active');
   updateFsBtn();
@@ -926,9 +961,8 @@ $('btnFs').onclick = () => {
     if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) exit.call(document);
     return;
   }
-  // Pre-load overlay iframe NOW, within the user-gesture context, so iOS autoplay works.
-  const ytSrc = $('ytFrame').src;
-  if (ytSrc) $('fsFrame').src = ytSrc;
+  // Safari/iOS only: pre-load the overlay iframe inside this user-gesture so autoplay works.
+  if (isSafariLike) { const s = buildFsSrc(); if (s) $('fsFrame').src = s; }
 
   // On desktop, try native fullscreen first; fall back to overlay if it fails/is unsupported.
   const el = $('vidWrap');
