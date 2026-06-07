@@ -310,12 +310,14 @@
   .btn-closewatch { background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); color:#cfe0f5; }
   .btn-fs:active, .btn-closewatch:active { transform: scale(.96); opacity:.8; }
   /* CSS fake-fullscreen — works on iOS Safari where requestFullscreen is blocked for divs.
-     Class goes on <body>; overflow:hidden on html+body is required so position:fixed works
-     correctly on iOS (overflow-x:hidden alone breaks fixed positioning there). */
-  body.vid-faking #vidWrap  { position:fixed !important; top:0 !important; right:0 !important; bottom:0 !important; left:0 !important; z-index:9999 !important;
-    margin:0 !important; border-radius:0 !important; background:#000 !important; }
+     .wrap must lose its stacking context (z-index→auto) so #vidWrap's z-index:9999 lives in
+     the root stacking context, not inside .wrap's z-index:1 sub-context. Without this, the
+     overlay is confined to .wrap's paint layer and can't cover the full viewport. */
+  body.vid-faking .wrap     { z-index: auto !important; }
+  body.vid-faking #vidWrap  { position:fixed !important; top:0 !important; right:0 !important; bottom:0 !important; left:0 !important; width:100% !important; height:100% !important; z-index:9999 !important;
+    margin:0 !important; border-radius:0 !important; background:#000 !important; overflow:hidden !important; }
   body.vid-faking #ytBox    { position:absolute !important; top:0 !important; right:0 !important; bottom:0 !important; left:0 !important;
-    padding-bottom:0 !important; height:100% !important; border-radius:0 !important; box-shadow:none !important; }
+    padding-bottom:0 !important; width:100% !important; height:100% !important; border-radius:0 !important; box-shadow:none !important; }
   body.vid-faking #vidBar   { position:fixed !important; bottom:0 !important; left:0 !important;
     right:0 !important; z-index:10000 !important; margin:0 !important;
     padding:12px !important; padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important;
@@ -839,18 +841,20 @@ function updateFsBtn() {
   $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
 
-// iOS Safari root cause: body { overflow-x:hidden } turns body into a scroll container,
-// so position:fixed children are placed relative to body layout, not the viewport.
-// Fix: set body to position:fixed itself (canonical iOS scroll-lock pattern).
-// A position:fixed body is NOT a scroll container, so fixed descendants snap to viewport.
+// iOS Safari: overflow-x:hidden on body makes body a scroll container, so position:fixed
+// children anchor to body not the viewport. Fix: overflow:hidden on BOTH html+body
+// (not just overflow-x) + position:fixed on body with width:100%. Also break .wrap's
+// stacking context (z-index:1 → auto) so #vidWrap's z-index:9999 is in the root context.
 function enterFakeFs() {
   fakeFs = true;
   savedScrollY = window.scrollY;
-  document.body.style.position = 'fixed';
-  document.body.style.top      = `-${savedScrollY}px`;
-  document.body.style.left     = '0';
-  document.body.style.right    = '0';
-  document.body.style.overflowX = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow  = 'hidden';
+  document.body.style.position  = 'fixed';
+  document.body.style.top       = `-${savedScrollY}px`;
+  document.body.style.width     = '100%';
+  const wrapEl = document.querySelector('.wrap');
+  if (wrapEl) wrapEl.style.zIndex = 'auto';
   document.body.classList.add('vid-faking');
   updateFsBtn();
 }
@@ -858,11 +862,13 @@ function exitFakeFs() {
   if (!fakeFs) return;
   fakeFs = false;
   document.body.classList.remove('vid-faking');
+  const wrapEl = document.querySelector('.wrap');
+  if (wrapEl) wrapEl.style.zIndex = '';
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow  = '';
   document.body.style.position  = '';
   document.body.style.top       = '';
-  document.body.style.left      = '';
-  document.body.style.right     = '';
-  document.body.style.overflowX = '';
+  document.body.style.width     = '';
   window.scrollTo(0, savedScrollY);
   updateFsBtn();
 }
