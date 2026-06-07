@@ -314,8 +314,6 @@
   #fsOverlay { position:fixed; top:0; right:0; bottom:0; left:0; z-index:9999; background:#000; overflow:hidden; }
   #fsOverlay.hidden { display:none; }
   #fsOverlay > iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
-  /* Score bug in the overlay is 20% bigger than the in-page version */
-  #fsOverlay .scorebug { transform:scale(1.2); transform-origin:top center; }
   /* Compact control bar — buttons are auto-width and centred, bar is shorter */
   #fsCtrl { position:fixed; bottom:0; left:0; right:0; z-index:10000; display:flex; justify-content:center; gap:12px;
     padding:8px 16px; padding-bottom:calc(8px + env(safe-area-inset-bottom));
@@ -533,7 +531,7 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.7</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.8</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
