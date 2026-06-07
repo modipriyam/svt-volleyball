@@ -525,7 +525,7 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.5</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.6</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
@@ -547,7 +547,7 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-let lastYt = null, prevA = null, prevB = null, embedOpen = false, lastTicker = '', tickerHalf = 0, lastSchedSig = '', lastStandSig = '', selectedGame = '', lastGameId = '';
+let lastYt = null, prevA = null, prevB = null, embedOpen = false, lastTicker = '', tickerHalf = 0, tickerTx = 0, lastSchedSig = '', lastStandSig = '', selectedGame = '', lastGameId = '';
 
 // ===== Score-delay buffer =====
 // Each poll records a timestamped snapshot of every live game's score. When a
@@ -777,26 +777,35 @@ function buildTicker(s) {
   if (html === lastTicker) return;      // don't rebuild if nothing changed
   lastTicker = html;
   // Two identical copies; measure ONE copy's exact width so the loop is seamless.
+  const prevOff = tickerHalf > 0 ? tickerTx % tickerHalf : 0;
   $('tickerTrack').innerHTML = '<span class="tcopy">' + html + '</span><span class="tcopy">' + html + '</span>';
   const first = $('tickerTrack').querySelector('.tcopy');
   tickerHalf = first ? first.offsetWidth : 0;
+  // Keep the visual scroll position so the strip doesn't jump on content refresh.
+  if (tickerHalf > 0) tickerTx = prevOff % tickerHalf;
 }
-window.addEventListener('resize', () => { const f = $('tickerTrack').querySelector('.tcopy'); if (f) tickerHalf = f.offsetWidth; });
+window.addEventListener('resize', () => {
+  const f = $('tickerTrack').querySelector('.tcopy');
+  if (!f) return;
+  const prevOff = tickerHalf > 0 ? tickerTx % tickerHalf : 0;
+  tickerHalf = f.offsetWidth;
+  if (tickerHalf > 0) tickerTx = prevOff % tickerHalf;
+});
 
 // JS-driven marquee — keeps moving even with iOS Reduce Motion / Low Power Mode,
 // which can pause CSS animations.
 (function tickerMarquee() {
   const track = $('tickerTrack');
   const SPEED = 60; // px per second
-  let tx = 0, last = 0;
+  let last = 0;
   function frame(ts) {
     if (!last) last = ts;
     const dt = Math.min((ts - last) / 1000, 0.1); last = ts;
     const half = tickerHalf;   // cached; avoids a forced layout every frame
     if (half > 0) {
-      tx += SPEED * dt;
-      const off = tx % half;   // modulo wrap → no hard reset/jump
-      track.style.transform = 'translateX(' + (-off) + 'px)';
+      tickerTx += SPEED * dt;
+      if (tickerTx >= half) tickerTx -= half;   // keep value small, same as % but avoids float growth
+      track.style.transform = 'translateX(' + (-tickerTx) + 'px)';
     }
     requestAnimationFrame(frame);
   }
