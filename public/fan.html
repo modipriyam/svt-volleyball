@@ -309,19 +309,14 @@
   .btn-fs { background:rgba(255,255,255,.12); border:1.5px solid rgba(255,255,255,.22); }
   .btn-closewatch { background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.16); color:#cfe0f5; }
   .btn-fs:active, .btn-closewatch:active { transform: scale(.96); opacity:.8; }
-  /* CSS fake-fullscreen — works on iOS Safari where requestFullscreen is blocked for divs.
-     .wrap must lose its stacking context (z-index→auto) so #vidWrap's z-index:9999 lives in
-     the root stacking context, not inside .wrap's z-index:1 sub-context. Without this, the
-     overlay is confined to .wrap's paint layer and can't cover the full viewport. */
-  body.vid-faking .wrap     { z-index: auto !important; }
-  body.vid-faking #vidWrap  { position:fixed !important; top:0 !important; right:0 !important; bottom:0 !important; left:0 !important; width:100% !important; height:100% !important; z-index:9999 !important;
-    margin:0 !important; border-radius:0 !important; background:#000 !important; overflow:hidden !important; }
-  body.vid-faking #ytBox    { position:absolute !important; top:0 !important; right:0 !important; bottom:0 !important; left:0 !important;
-    padding-bottom:0 !important; width:100% !important; height:100% !important; border-radius:0 !important; box-shadow:none !important; }
-  body.vid-faking #vidBar   { position:fixed !important; bottom:0 !important; left:0 !important;
-    right:0 !important; z-index:10000 !important; margin:0 !important;
-    padding:12px !important; padding-bottom:calc(12px + env(safe-area-inset-bottom)) !important;
-    background:rgba(10,22,48,.96) !important; border-top:1px solid rgba(255,255,255,.14) !important; }
+  /* Fullscreen overlay — direct child of <body>, so position:fixed + z-index:9999 work
+     reliably on iOS Safari without any stacking-context gymnastics on .wrap. */
+  #fsOverlay { position:fixed; top:0; right:0; bottom:0; left:0; z-index:9999; background:#000; overflow:hidden; }
+  #fsOverlay.hidden { display:none; }
+  #fsOverlay > iframe { position:absolute; top:0; left:0; width:100%; height:100%; border:0; }
+  #fsCtrl { position:fixed; bottom:0; left:0; right:0; z-index:10000; display:flex; gap:10px;
+    padding:12px; padding-bottom:calc(12px + env(safe-area-inset-bottom));
+    background:rgba(10,22,48,.96); border-top:1px solid rgba(255,255,255,.14); }
   .sb-delay { position:absolute; bottom:12px; left:12px; z-index:3; pointer-events:none;
     font-family:var(--cond); font-weight:700; letter-spacing:.06em; font-size:.74rem; color:#cfe0f5;
     background:rgba(11,31,61,.8); border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:3px 10px; }
@@ -699,6 +694,7 @@ function render(s) {
       const dl = $('sbDelay');
       if (embedOpen && delaySec > 0) { dl.textContent = '⏱ score +' + delaySec + 's'; dl.classList.remove('hidden'); }
       else dl.classList.add('hidden');
+      if (fakeFs) syncFsBug();
     } else hideVideo();
   } else {
     $('liveCard').classList.add('hidden');
@@ -828,12 +824,17 @@ $('btnCloseWatch').onclick = () => {
   $('btnWatch').classList.remove('hidden');
 };
 
-// ── Fullscreen (score-bug stays visible) ──────────────────────────────────────
-// iOS Safari blocks requestFullscreen on non-<video> elements. We use a CSS
-// fake-fullscreen on <body> class instead: position:fixed + overflow:hidden on
+// ── Fullscreen ────────────────────────────────────────────────────────────────
+// On iOS Safari, requestFullscreen on a <div> is silently ignored.
+// Fallback: show #fsOverlay — a dedicated <div> that is a direct child of <body>,
+// so position:fixed + z-index:9999 covers the viewport without any stacking-context
+// issues from .wrap{z-index:1}. A fresh iframe is loaded into the overlay; the live
+// stream reconnects to the live edge (~2 s), which is acceptable for live viewing.
+// The iframe src is set eagerly inside the click handler (within the iOS user-gesture
+// window) so autoplay works.
 const FS_ICON   = 'M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3';
 const EXIT_ICON = 'M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3';
-let fakeFs = false, savedScrollY = 0;
+let fakeFs = false;
 
 function updateFsBtn() {
   const full = fakeFs || !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -841,35 +842,26 @@ function updateFsBtn() {
   $('fsLabel').textContent = full ? 'Exit' : 'Fullscreen';
 }
 
-// iOS Safari: overflow-x:hidden on body makes body a scroll container, so position:fixed
-// children anchor to body not the viewport. Fix: overflow:hidden on BOTH html+body
-// (not just overflow-x) + position:fixed on body with width:100%. Also break .wrap's
-// stacking context (z-index:1 → auto) so #vidWrap's z-index:9999 is in the root context.
+function syncFsBug() {
+  const src = $('scorebug'), dst = $('fsBug');
+  if (!src || !dst) return;
+  dst.innerHTML = src.innerHTML;
+  dst.className = src.className;
+}
+
 function enterFakeFs() {
   fakeFs = true;
-  savedScrollY = window.scrollY;
-  document.documentElement.style.overflow = 'hidden';
-  document.body.style.overflow  = 'hidden';
-  document.body.style.position  = 'fixed';
-  document.body.style.top       = `-${savedScrollY}px`;
-  document.body.style.width     = '100%';
-  const wrapEl = document.querySelector('.wrap');
-  if (wrapEl) wrapEl.style.zIndex = 'auto';
-  document.body.classList.add('vid-faking');
+  if (!$('fsFrame').src) $('fsFrame').src = $('ytFrame').src; // fallback if not pre-loaded
+  syncFsBug();
+  $('fsOverlay').classList.remove('hidden');
   updateFsBtn();
 }
+
 function exitFakeFs() {
   if (!fakeFs) return;
   fakeFs = false;
-  document.body.classList.remove('vid-faking');
-  const wrapEl = document.querySelector('.wrap');
-  if (wrapEl) wrapEl.style.zIndex = '';
-  document.documentElement.style.overflow = '';
-  document.body.style.overflow  = '';
-  document.body.style.position  = '';
-  document.body.style.top       = '';
-  document.body.style.width     = '';
-  window.scrollTo(0, savedScrollY);
+  $('fsOverlay').classList.add('hidden');
+  $('fsFrame').src = '';
   updateFsBtn();
 }
 
@@ -880,20 +872,23 @@ $('btnFs').onclick = () => {
     if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) exit.call(document);
     return;
   }
-  // Desktop: try native fullscreen first.
-  // iOS Safari: requestFullscreen on a div is silently ignored (no error, no result),
-  // so we check after a short delay whether it actually activated.
+  // Pre-load overlay iframe NOW, within the user-gesture context, so iOS autoplay works.
+  const ytSrc = $('ytFrame').src;
+  if (ytSrc) $('fsFrame').src = ytSrc;
+
+  // On desktop, try native fullscreen first; fall back to overlay if it fails/is unsupported.
   const el = $('vidWrap');
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
   if (req) {
     try {
       const p = req.call(el);
       if (p && typeof p.then === 'function') {
-        p.then(updateFsBtn).catch(() => enterFakeFs());
+        p.then(() => { $('fsFrame').src = ''; updateFsBtn(); })
+         .catch(() => enterFakeFs());
       } else {
         setTimeout(() => {
           if (!document.fullscreenElement && !document.webkitFullscreenElement) enterFakeFs();
-          else updateFsBtn();
+          else { $('fsFrame').src = ''; updateFsBtn(); }
         }, 120);
       }
     } catch(e) { enterFakeFs(); }
@@ -901,6 +896,10 @@ $('btnFs').onclick = () => {
     enterFakeFs();
   }
 };
+
+$('fsBtnExit').onclick  = () => exitFakeFs();
+$('fsBtnClose').onclick = () => $('btnCloseWatch').click();
+
 document.addEventListener('fullscreenchange', updateFsBtn);
 document.addEventListener('webkitfullscreenchange', updateFsBtn);
 
@@ -1033,5 +1032,22 @@ function connect(){
 }
 connect();
 </script>
+
+<!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
+     position:fixed covers the full viewport on iOS Safari without any hacks. -->
+<div id="fsOverlay" class="hidden">
+  <iframe id="fsFrame" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen></iframe>
+  <div class="scorebug hidden" id="fsBug"></div>
+  <div id="fsCtrl">
+    <button class="btn-fs" id="fsBtnExit">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+      <span>Exit</span>
+    </button>
+    <button class="btn-closewatch" id="fsBtnClose">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      Close Video
+    </button>
+  </div>
+</div>
 </body>
 </html>
