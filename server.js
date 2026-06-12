@@ -229,6 +229,7 @@ function publicState() {
     publicUrl: state.publicUrl || '',
     shortUrl: state.shortUrl || '',
     games: state.games.map(publicGame).sort((a, b) => a.slot - b.slot),
+    pushCount: subscriptions.length,
   };
 }
 
