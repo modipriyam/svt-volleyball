@@ -45,12 +45,14 @@
   input::placeholder { color:#8aa0c4; } select option { background:#0a2342; color:#fff; }
   .inline { display:flex; gap:8px; align-items:center; } .inline>input,.inline>select{ flex:1; } .inline>button{ flex:0 0 auto; }
   .addgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; } @media(max-width:480px){ .addgrid{grid-template-columns:1fr;} }
-  .streamRow { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
-  .streamRow .ct { flex:0 0 64px; font-weight:700; font-size:.85rem; opacity:.85; }
-  .streamRow input[type=text] { flex:1; min-width:0; }
-  .streamRow input[type=number] { flex:0 0 58px; text-align:center; }
-  .streamRow .su { flex:0 0 auto; opacity:.6; font-size:.85rem; margin-left:-4px; }
-  .streamRow button { flex:0 0 auto; }
+  .streamRow { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+  .sr-top { display:flex; gap:8px; align-items:center; }
+  .sr-top .ct { flex:0 0 64px; font-weight:700; font-size:.85rem; opacity:.85; white-space:nowrap; }
+  .sr-top input[type=text] { flex:1; min-width:0; }
+  .sr-bot { display:flex; gap:8px; align-items:center; padding-left:72px; flex-wrap:wrap; }
+  .sr-bot input[type=number] { flex:0 0 58px; text-align:center; }
+  .sr-bot .su { flex:0 0 auto; opacity:.6; font-size:.85rem; margin-left:-4px; }
+  .sr-bot button { flex:0 0 auto; margin-left:auto; }
   .bug-toggle { display:flex; align-items:center; gap:5px; flex:0 0 auto; cursor:pointer; font-size:.8rem; font-weight:600; opacity:.85; white-space:nowrap; }
   .bug-toggle input { width:15px; height:15px; cursor:pointer; accent-color:var(--accent); }
   .hint { font-size:.8rem; line-height:1.4; opacity:.7; }
@@ -129,29 +131,17 @@
       <div class="inline"><input type="text" id="inAnnounce" placeholder="e.g. Finals at 4pm" /><button class="btn-accent btn-sm" id="btnAnnounce">Push</button><button class="btn-ghost btn-sm" id="btnAnnounceClear">Clear</button></div>
       <h2>Live Video Streams</h2>
       <p class="hint" style="margin:4px 0 10px">Paste each court's YouTube Live link. It plays <b>on the fan page</b>. Set a <b>score delay</b> (s) to sync the score with the stream (~15–20s for YouTube live). Disable <b>score bug</b> if using OBS overlay instead.</p>
-      <div class="streamRow"><span class="ct">Court 1</span>
-        <input type="text" id="inYoutube1" placeholder="https://youtube.com/watch?v=..." />
-        <input type="number" id="inDelay1" min="0" max="120" step="1" title="Score delay (seconds)" />
-        <span class="su">s</span>
-        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug1" /><span>Score bug</span></label>
-        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch1" /><span>Watch Live</span></label>
-        <button class="btn-accent btn-sm" id="btnStream1">Save</button>
+      <div class="streamRow">
+        <div class="sr-top"><span class="ct">Court 1</span><input type="text" id="inYoutube1" placeholder="https://youtube.com/watch?v=..." /></div>
+        <div class="sr-bot"><input type="number" id="inDelay1" min="0" max="120" step="1" title="Score delay (seconds)" /><span class="su">s</span><label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug1" /><span>Score bug</span></label><label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch1" /><span>Watch Live</span></label><button class="btn-accent btn-sm" id="btnStream1">Save</button></div>
       </div>
-      <div class="streamRow"><span class="ct">Court 2</span>
-        <input type="text" id="inYoutube2" placeholder="https://youtube.com/watch?v=..." />
-        <input type="number" id="inDelay2" min="0" max="120" step="1" title="Score delay (seconds)" />
-        <span class="su">s</span>
-        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug2" /><span>Score bug</span></label>
-        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch2" /><span>Watch Live</span></label>
-        <button class="btn-accent btn-sm" id="btnStream2">Save</button>
+      <div class="streamRow">
+        <div class="sr-top"><span class="ct">Court 2</span><input type="text" id="inYoutube2" placeholder="https://youtube.com/watch?v=..." /></div>
+        <div class="sr-bot"><input type="number" id="inDelay2" min="0" max="120" step="1" title="Score delay (seconds)" /><span class="su">s</span><label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug2" /><span>Score bug</span></label><label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch2" /><span>Watch Live</span></label><button class="btn-accent btn-sm" id="btnStream2">Save</button></div>
       </div>
-      <div class="streamRow"><span class="ct">Court 3</span>
-        <input type="text" id="inYoutube3" placeholder="https://youtube.com/watch?v=..." />
-        <input type="number" id="inDelay3" min="0" max="120" step="1" title="Score delay (seconds)" />
-        <span class="su">s</span>
-        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug3" /><span>Score bug</span></label>
-        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch3" /><span>Watch Live</span></label>
-        <button class="btn-accent btn-sm" id="btnStream3">Save</button>
+      <div class="streamRow">
+        <div class="sr-top"><span class="ct">Court 3</span><input type="text" id="inYoutube3" placeholder="https://youtube.com/watch?v=..." /></div>
+        <div class="sr-bot"><input type="number" id="inDelay3" min="0" max="120" step="1" title="Score delay (seconds)" /><span class="su">s</span><label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug3" /><span>Score bug</span></label><label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch3" /><span>Watch Live</span></label><button class="btn-accent btn-sm" id="btnStream3">Save</button></div>
       </div>
       <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkServe" /><span class="slider"></span>Enable serve tracking</label>
     </div>
