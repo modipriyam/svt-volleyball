@@ -187,7 +187,7 @@
     </div>
 
     <div class="panel hidden" id="noGame">
-      <p class="muted" style="margin:0;text-align:center">No game selected. Go to <b>📋 Schedule</b> to start a game (up to 2 courts) or pick a live one to score.</p>
+      <p class="muted" style="margin:0;text-align:center">No game selected. Go to <b>📋 Schedule</b> to start a game (up to 3 courts) or pick a live one to score.</p>
     </div>
   </div>
 
@@ -300,7 +300,7 @@ function render(s){
 function renderFixtures(s){
   const wrap=$('fixtures');
   if(!s.fixtures.length){ wrap.innerHTML='<p class="muted">No fixtures yet. Add one above.</p>'; return; }
-  const full = (s.games||[]).length>=2;
+  const full = (s.games||[]).length>=3;
   wrap.innerHTML='';
   s.fixtures.forEach(f=>{
     const liveG = (s.games||[]).find(g=>g.fixtureId===f.id);
@@ -323,7 +323,7 @@ function renderFixtures(s){
 let startFixtureId=null, chosenSets=3, chosenCourt=1;
 function buildCourtOpts(){
   const used = new Set((lastState.games||[]).map(g=>g.slot));
-  $('courtOpts').innerHTML = [1,2].map(n=>{
+  $('courtOpts').innerHTML = [1,2,3].map(n=>{
     const inUse = used.has(n);
     const cls = inUse ? 'btn-ghost' : (n===chosenCourt ? 'btn-accent' : 'btn-ghost');
     return `<button class="${cls}" data-court="${n}" ${inUse?'disabled':''}>Court ${n}${inUse?' (in use)':(n===chosenCourt?' ✓':'')}</button>`;
@@ -333,7 +333,7 @@ function openCourtChooser(fid){
   const f=lastState.fixtures.find(x=>x.id===fid); if(!f) return;
   startFixtureId=fid; chosenSets=3; $('setsVal').textContent=chosenSets;
   const used = new Set((lastState.games||[]).map(g=>g.slot));
-  chosenCourt = [1,2].find(n=>!used.has(n)) || 1;
+  chosenCourt = [1,2,3].find(n=>!used.has(n)) || 1;
   $('courtWho').textContent = f.teamA+' vs '+f.teamB;
   buildCourtOpts();
   $('courtModal').classList.add('open'); $('courtScrim').classList.add('open');
