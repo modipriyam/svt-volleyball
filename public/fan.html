@@ -177,10 +177,13 @@
   .banner .ic { font-size:1.15rem; }
 
   /* ===== LIVE SCOREBOARD ===== */
-  .gametabs { display:flex; gap:8px; margin-bottom:14px; }
-  .gametabs button { flex:1; min-width:0; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#cfe0f5;
-    font-family:var(--cond); font-weight:800; text-transform:uppercase; letter-spacing:.03em; font-size:.98rem; padding:12px 10px;
-    border-radius:12px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .gametabs { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .gametabs button { flex:1 1 calc(50% - 4px); min-width:0; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.18); color:#cfe0f5;
+    font-family:var(--cond); font-weight:800; text-transform:uppercase; letter-spacing:.03em;
+    padding:10px 10px; border-radius:12px; cursor:pointer; text-align:center; white-space:normal; }
+  .gametabs.triple button { flex:1 1 100%; }
+  .gametabs button .tab-ct { display:block; font-size:.65rem; letter-spacing:.12em; opacity:.6; margin-bottom:3px; }
+  .gametabs button .tab-vs { display:block; font-size:.88rem; line-height:1.25; }
   .gametabs button.active { background:linear-gradient(100deg,var(--orange),var(--orange-d)); color:#fff; border-color:transparent; box-shadow:0 6px 16px rgba(242,106,33,.4); }
 
   .scorecard { margin-top: 0; border-radius: 22px; overflow: hidden; position: relative;
@@ -666,7 +669,12 @@ function render(s) {
   const tabs = $('gameTabs');
   if (games.length > 1) {
     if (!games.some((g) => g.fixtureId === selectedGame)) selectedGame = games[0].fixtureId;
-    tabs.innerHTML = games.map((g) => `<button class="${g.fixtureId === selectedGame ? 'active' : ''}" data-fgame="${g.fixtureId}">${escapeHtml(g.teamA)} v ${escapeHtml(g.teamB)}</button>`).join('');
+    tabs.innerHTML = games.map((g) =>
+      `<button class="${g.fixtureId === selectedGame ? 'active' : ''}" data-fgame="${g.fixtureId}">` +
+      `<span class="tab-ct">Court ${g.slot}</span>` +
+      `<span class="tab-vs">${escapeHtml(g.teamA)} v ${escapeHtml(g.teamB)}</span>` +
+      `</button>`).join('');
+    tabs.classList.toggle('triple', games.length >= 3);
     tabs.classList.remove('hidden');
   } else {
     tabs.classList.add('hidden');
