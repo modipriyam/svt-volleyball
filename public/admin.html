@@ -134,6 +134,7 @@
         <input type="number" id="inDelay1" min="0" max="120" step="1" title="Score delay (seconds)" />
         <span class="su">s</span>
         <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug1" /><span>Score bug</span></label>
+        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch1" /><span>Watch Live</span></label>
         <button class="btn-accent btn-sm" id="btnStream1">Save</button>
       </div>
       <div class="streamRow"><span class="ct">Court 2</span>
@@ -141,9 +142,17 @@
         <input type="number" id="inDelay2" min="0" max="120" step="1" title="Score delay (seconds)" />
         <span class="su">s</span>
         <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug2" /><span>Score bug</span></label>
+        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch2" /><span>Watch Live</span></label>
         <button class="btn-accent btn-sm" id="btnStream2">Save</button>
       </div>
-      <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkWatch" /><span class="slider"></span>Show <b>live video</b> on fan page</label>
+      <div class="streamRow"><span class="ct">Court 3</span>
+        <input type="text" id="inYoutube3" placeholder="https://youtube.com/watch?v=..." />
+        <input type="number" id="inDelay3" min="0" max="120" step="1" title="Score delay (seconds)" />
+        <span class="su">s</span>
+        <label class="bug-toggle" title="Show score overlay on video"><input type="checkbox" id="chkBug3" /><span>Score bug</span></label>
+        <label class="bug-toggle" title="Show Watch Live button on fan page"><input type="checkbox" id="chkWatch3" /><span>Watch Live</span></label>
+        <button class="btn-accent btn-sm" id="btnStream3">Save</button>
+      </div>
       <label class="switch" style="margin-top:14px"><input type="checkbox" id="chkServe" /><span class="slider"></span>Enable serve tracking</label>
     </div>
 
@@ -175,6 +184,7 @@
         <a class="btn-ghost" href="/fan" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Fan ↗</a>
         <a class="btn-ghost" href="/overlay?game=1" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Overlay C1 ↗</a>
         <a class="btn-ghost" href="/overlay?game=2" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Overlay C2 ↗</a>
+        <a class="btn-ghost" href="/overlay?game=3" target="_blank" style="text-align:center;text-decoration:none;padding:12px;border-radius:12px">Overlay C3 ↗</a>
       </div>
     </div>
   </div>
@@ -236,13 +246,14 @@ function render(s){
 
   if(document.activeElement!==$('inAnnounce')) $('inAnnounce').value=s.announcement||'';
   const st=s.streams||{};
-  [1,2].forEach(c=>{ const cf=st[c]||{};
+  [1,2,3].forEach(c=>{ const cf=st[c]||{};
     const u=$('inYoutube'+c), d=$('inDelay'+c);
     if(document.activeElement!==u) u.value=cf.url||'';
     if(document.activeElement!==d) d.value=(cf.delay!=null?cf.delay:0);
     $('chkBug'+c).checked=(cf.showBug!==false);
+    $('chkWatch'+c).checked=(cf.showWatch===true);
   });
-  $('chkWatch').checked=!!s.showWatch; $('chkServe').checked=!!s.showServe;
+  $('chkServe').checked=!!s.showServe;
 
   if(s.publicUrl){ $('publicPanel').style.display=''; $('publicHint').style.display='none';
     if($('publicUrl').textContent!==s.publicUrl+'/fan'){ $('publicUrl').textContent=s.publicUrl+'/fan'; $('publicQr').src='/api/qr?url='+encodeURIComponent(s.publicUrl+'/fan'); }
@@ -282,8 +293,7 @@ document.body.addEventListener('click',(e)=>{
 
 $('btnAnnounce').onclick=()=>api('/api/announcement',{text:$('inAnnounce').value});
 $('btnAnnounceClear').onclick=()=>{ $('inAnnounce').value=''; api('/api/announcement',{text:''}); };
-[1,2].forEach(c=>{ $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked}); toast('Court '+c+' stream saved'); }; });
-$('chkWatch').onchange=()=>api('/api/match',{showWatch:$('chkWatch').checked});
+[1,2,3].forEach(c=>{ $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked}); toast('Court '+c+' stream saved'); }; });
 $('chkServe').onchange=()=>api('/api/match',{showServe:$('chkServe').checked});
 $('btnCrown').onclick=()=>{ const v=$('champSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{champion:v}); toast('🏆 '+v+' crowned!'); };
 $('btnClearChamp').onclick=()=>api('/api/match',{champion:''});

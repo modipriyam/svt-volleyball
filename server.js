@@ -36,19 +36,18 @@ function defaultState() {
     // Per-court live stream: the YouTube link shown (embedded) on the fan page for
     // that court's game, plus a score-display delay (seconds) to line the overlaid
     // score up with the stream's latency. delay 0 = score updates immediately.
-    streams: { 1: { url: '', delay: 0 }, 2: { url: '', delay: 0 } },
-    showWatch: false,     // whether the embedded live video shows on the fan page
+    streams: { 1: { url: '', delay: 0, showWatch: false }, 2: { url: '', delay: 0, showWatch: false }, 3: { url: '', delay: 0, showWatch: false } },
     showServe: false,     // whether serve tracking (buttons + indicator) is enabled
     champion: '',         // tournament champion team name ('' = none)
     runnerUp: '',         // tournament runner-up team name ('' = none)
     announcement: '',
     publicUrl: '',        // public tunnel URL (set by share.command), shown as a QR in admin
     shortUrl: '',         // shortened fan link (via is.gd) for easy sharing
-    games: [],            // up to 2 concurrent live games: { slot:1|2, fixtureId, live }
+    games: [],            // up to 3 concurrent live games: { slot:1|2|3, fixtureId, live }
   };
 }
 
-const MAX_GAMES = 2;
+const MAX_GAMES = 3;
 const SHORT_ALIAS = process.env.SHORT_ALIAS || 'svt-live';  // custom TinyURL alias for the fan link
 const TINYURL_TOKEN = process.env.TINYURL_TOKEN || '';      // set this to keep the alias CONSTANT across tunnel restarts
 
@@ -99,7 +98,7 @@ function normalizeState() {
   if (!state.streams || typeof state.streams !== 'object') state.streams = {};
   for (let s = 1; s <= MAX_GAMES; s++) {
     const cur = state.streams[s] || {};
-    state.streams[s] = { url: String(cur.url || '').trim(), delay: Math.max(0, +cur.delay || 0), showBug: cur.showBug !== false };
+    state.streams[s] = { url: String(cur.url || '').trim(), delay: Math.max(0, +cur.delay || 0), showBug: cur.showBug !== false, showWatch: cur.showWatch === true };
   }
   if (!state.streams[1].url && state.youtubeUrl) state.streams[1].url = String(state.youtubeUrl).trim();
 }
@@ -213,7 +212,7 @@ function publicGame(g) {
   const stream = (state.streams && state.streams[g.slot]) || { url: '', delay: 0 };
   return { slot: g.slot, fixtureId: g.fixtureId, teamA: f.teamA, teamB: f.teamB,
     captainA: f.captainA || '', captainB: f.captainB || '',
-    streamUrl: stream.url || '', streamDelay: stream.delay || 0, showBug: stream.showBug !== false, live };
+    streamUrl: stream.url || '', streamDelay: stream.delay || 0, showBug: stream.showBug !== false, showWatch: stream.showWatch === true, live };
 }
 
 // The state we send to clients.
@@ -401,12 +400,12 @@ app.post('/api/fixtures/:id/start', mutate((req) => {
   if (!f) return { error: 'fixture not found', status: 404 };
   if (findGame(f.id)) return { error: 'this match is already live' };
   let slot = req.body && parseInt(req.body.slot, 10);
-  if (slot === 1 || slot === 2) {
+  if (slot >= 1 && slot <= MAX_GAMES) {
     if (state.games.some((g) => g.slot === slot)) return { error: `Court ${slot} is already in use.` };
   } else {
     slot = freeSlot();
   }
-  if (!slot) return { error: 'Both courts are in use — end a game first.' };
+  if (!slot) return { error: 'All courts are in use — end a game first.' };
   f.status = 'live';
   const live = blankLive();
   const sets = req.body && parseInt(req.body.sets, 10);
@@ -531,7 +530,7 @@ app.post('/api/match', mutate((req) => {
 app.post('/api/stream', mutate((req) => {
   const b = req.body || {};
   const court = parseInt(b.court, 10);
-  if (!(court >= 1 && court <= MAX_GAMES)) return { error: 'court must be 1 or 2' };
+  if (!(court >= 1 && court <= MAX_GAMES)) return { error: `court must be 1–${MAX_GAMES}` };
   if (!state.streams) state.streams = {};
   const cur = state.streams[court] || { url: '', delay: 0, showBug: true };
   if (b.url !== undefined) cur.url = String(b.url).trim();
@@ -540,6 +539,7 @@ app.post('/api/stream', mutate((req) => {
     cur.delay = Number.isFinite(d) ? Math.min(120, Math.max(0, d)) : 0;
   }
   if (b.showBug !== undefined) cur.showBug = !!b.showBug;
+  if (b.showWatch !== undefined) cur.showWatch = !!b.showWatch;
   state.streams[court] = cur;
 }));
 

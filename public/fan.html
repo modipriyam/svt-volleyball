@@ -531,7 +531,7 @@
 
    </div><!-- /layout -->
 
-    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.9</footer>
+    <footer>Live scores update automatically &nbsp;·&nbsp; v2026-06-07.10</footer>
   </div>
 
 <!-- Fullscreen overlay: direct child of body — no stacking-context parent, so
@@ -682,7 +682,7 @@ function render(s) {
     // and this court has a valid stream link. The displayed score is delayed to
     // match the video, keeping the whole page in sync with what's on screen.
     const streamId = ytId(active.streamUrl);
-    const videoOn = s.showWatch && !!streamId;
+    const videoOn = active.showWatch && !!streamId;
     const delaySec = videoOn ? (active.streamDelay || 0) : 0;
     const live = displayLive(active, delaySec);
     $('teamA').textContent = active.teamA;
