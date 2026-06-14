@@ -296,7 +296,12 @@ $('btnAnnounce').onclick=async()=>{
   toast(pc>0?`📢 Pushed to ${pc} device${pc===1?'':'s'}`:'📢 Pushed (no subscribers yet)');
 };
 $('btnAnnounceClear').onclick=()=>{ $('inAnnounce').value=''; api('/api/announcement',{text:''}); };
-[1,2,3].forEach(c=>{ $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked}); toast('Court '+c+' stream saved'); }; });
+[1,2,3].forEach(c=>{
+  $('btnStream'+c).onclick=()=>{ api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked}); toast('Court '+c+' stream saved'); };
+  // Stream Live toggle saves instantly (like Serve Tracking) so the render loop
+  // never fights with the user's toggle state before they click Save.
+  $('chkWatch'+c).onchange=()=>api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked});
+});
 $('chkServe').onchange=()=>api('/api/match',{showServe:$('chkServe').checked});
 $('btnCrown').onclick=()=>{ const v=$('champSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{champion:v}); toast('🏆 '+v+' crowned!'); };
 $('btnClearChamp').onclick=()=>api('/api/match',{champion:''});
