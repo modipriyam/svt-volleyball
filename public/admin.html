@@ -301,6 +301,7 @@ $('btnAnnounceClear').onclick=()=>{ $('inAnnounce').value=''; api('/api/announce
   // Stream Live toggle saves instantly (like Serve Tracking) so the render loop
   // never fights with the user's toggle state before they click Save.
   $('chkWatch'+c).onchange=()=>api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked});
+  $('chkBug'+c).onchange=()=>api('/api/stream',{court:c,url:$('inYoutube'+c).value,delay:+$('inDelay'+c).value||0,showBug:$('chkBug'+c).checked,showWatch:$('chkWatch'+c).checked});
 });
 $('chkServe').onchange=()=>api('/api/match',{showServe:$('chkServe').checked});
 $('btnCrown').onclick=()=>{ const v=$('champSelect').value; if(!v){toast('Pick a team');return;} api('/api/match',{champion:v}); toast('🏆 '+v+' crowned!'); };
